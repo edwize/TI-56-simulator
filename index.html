@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TI SR-56 Simulator - Eddie Wizelman 2026</title>
+    <style>
+        :root { 
+            --bg-color: #111112; --calc-bg: #232326; --panel-bg: #141415; 
+            --led-bg: #090000; --led-red: #ff1a1a; --key-gray: #4d4d50; 
+            --key-white: #ededed; --key-orange: #d96316; --text-gold: #cca434; 
+        }
+        @font-face {
+            font-family: 'SevenSegmentVintage';
+            src: url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format('woff2'),
+                 url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format('woff');
+            font-weight: normal; font-style: normal;
+        }
+        body { 
+            background-color: var(--bg-color); font-family: 'Segoe UI', Arial, sans-serif; 
+            display: flex; justify-content: center; align-items: flex-start; 
+            gap: 25px; padding: 25px; color: #eee; user-select: none; 
+        }
+        .calculator { 
+            background-color: var(--calc-bg); width: 375px; padding: 22px; 
+            border-radius: 14px; border: 3px solid #38383c; box-shadow: 0 20px 45px rgba(0,0,0,0.8); 
+        }
+        .brand { text-align: center; font-style: italic; font-weight: bold; font-size: 16px; color: #b5b5b5; letter-spacing: 2px; margin-bottom: 2px; }
+        .model { text-align: center; font-size: 12px; letter-spacing: 6px; color: var(--key-orange); margin-bottom: 16px; font-weight: bold; }
+        .display-box { background-color: var(--led-bg); padding: 12px 16px; border-radius: 6px; border: 3px solid #080809; margin-bottom: 20px; }
+        .status-indicators { display: flex; gap: 20px; font-size: 11px; font-weight: bold; color: #250202; margin-bottom: 4px; font-family: monospace; }
+        .status-indicators .active { color: var(--led-red); text-shadow: 0 0 6px var(--led-red); }
+        .led-text { 
+            font-family: 'SevenSegmentVintage', 'Courier New', monospace; font-size: 30px; font-weight: bold; 
+            color: var(--led-red); text-align: right; height: 38px; line-height: 38px; white-space: pre; 
+            text-shadow: 0 0 8px rgba(255,26,26,0.6); letter-spacing: 4px;
+        }
+        .panel-container { background-color: var(--panel-bg); padding: 14px 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 14px; }
+        .top-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 6px; }
+        .bottom-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px; padding-top: 5px; border-top: 2px solid #222; }
+        .key-cell { display: flex; flex-direction: column; align-items: center; }
+        .top-label { font-size: 8.5px; color: var(--text-gold); font-weight: bold; height: 12px; margin-bottom: 3px; text-transform: uppercase; text-align: center; white-space: nowrap; width: 100%; overflow: hidden; }
+        button { width: 100%; height: 34px; border: none; border-radius: 4px; font-size: 10.5px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #000; transition: transform 0.05s; }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
+        .g-btn { background-color: var(--key-gray); color: #fff; }
+        .w-btn { background-color: var(--key-white); color: #111; font-size: 14px; }
+        .o-btn { background-color: var(--key-orange); color: #000; }
+        .side-panel { background-color: #141415; width: 260px; height: 640px; border-radius: 8px; padding: 16px; border: 1px solid #333; display: flex; flex-direction: column; }
+        /* Responsive: on portrait / small screens stack memory below calculator
+           and animate the memory panel while keeping the calculator visible/static. */
+        @media (max-width: 700px), (orientation: portrait) {
+            body { flex-direction: column; align-items: center; padding: 12px; gap: 12px; }
+            .calculator { width: 100%; max-width: 420px; box-sizing: border-box; position: sticky; top: 12px; z-index: 20; }
+            .panel-container { width: 100%; max-width: 420px; }
+            .side-panel { width: 100%; max-width: 420px; height: 260px; border-radius: 8px; padding: 10px; overflow: hidden; position: relative; z-index: 10; }
+            .steps-box { height: calc(100% - 72px); overflow-y: auto; }
+            /* animation when showing memory panel */
+            .side-panel.mobile-enter { animation: sr56SlideUp 360ms ease; }
+            .side-panel.mobile-exit { animation: sr56SlideDown 280ms ease; }
+            @keyframes sr56SlideUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes sr56SlideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(18px); opacity: 0; } }
+        }
+        .steps-box { flex-grow: 1; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; margin-bottom: 10px; }
+        .step-item { padding: 4px 6px; display: flex; justify-content: space-between; color: #555; transition: background-color 0.1s; }
+        .step-item.active { background-color: #380d0d; color: var(--led-red); font-weight: bold; }
+        .step-item.filled { color: #ccc; }
+        .file-controls { display: flex; gap: 8px; }
+        .io-btn { background-color: #3a3a3d; color: #fff; border: 1px solid #555; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-size: 11px; text-align: center; font-weight: bold; }
+        .io-btn:hover { background-color: #4f4f54; }
+    </style>
+</head>
+<body>
+<div class="calculator">
+    <div class="brand">TEXAS INSTRUMENTS</div>
+    <div class="model">SR-56</div>
+    <div class="display-box">
+        <div class="status-indicators"><span id="ind-2nd">2nd</span><span id="ind-inv">INV</span></div>
+        <div class="led-text" id="display">0.</div>
+    </div>
+    <div class="panel-container">
+        <!-- TOP SECTION: 5 Columns x 4 Rows -->
+        <div class="top-grid">
+            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('2nd')">2nd</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="g-btn" onclick="press('INV')">INV</button></div>
+            <div class="key-cell"><div class="top-label">log</div><button class="g-btn" onclick="press('lnx')">lnx</button></div>
+            <div class="key-cell"><div class="top-label">10ᵡ</div><button class="g-btn" onclick="press('ex')">eᵡ</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('CLR')">CLR</button></div>
+            <div class="key-cell"><div class="top-label">f(n)</div><button class="g-btn" onclick="press('LRN')">LRN</button></div>
+            <div class="key-cell"><div class="top-label">dsz</div><button class="g-btn" onclick="press('GTO')">GTO</button></div>
+            <div class="key-cell"><div class="top-label">|x|</div><button class="g-btn" onclick="press('sin')">sin</button></div>
+            <div class="key-cell"><div class="top-label">int</div><button class="g-btn" onclick="press('cos')">cos</button></div>
+            <div class="key-cell"><div class="top-label">1/x</div><button class="g-btn" onclick="press('tan')">tan</button></div>
+            <div class="key-cell"><div class="top-label">bst</div><button class="g-btn" onclick="press('SST')">SST</button></div>
+            <div class="key-cell"><div class="top-label">x=t</div><button class="g-btn" onclick="press('xt')">x:t</button></div>
+            <div class="key-cell"><div class="top-label">CMs</div><button class="g-btn" onclick="press('STO')">STO</button></div>
+            <div class="key-cell"><div class="top-label">exc</div><button class="g-btn" onclick="press('RCL')">RCL</button></div>
+            <div class="key-cell"><div class="top-label">prod</div><button class="g-btn" onclick="press('SUM')">SUM</button></div>
+            <div class="key-cell"><div class="top-label">nop</div><button class="g-btn" onclick="press('R/S')">R/S</button></div>
+            <div class="key-cell"><div class="top-label">x≥t</div><button class="g-btn" onclick="press('RST')">RST</button></div>
+            <div class="key-cell"><div class="top-label">√x</div><button class="g-btn" onclick="press('x2')">x²</button></div>
+            <div class="key-cell"><div class="top-label">fix</div><button class="g-btn" onclick="press('EE')">EE</button></div>
+            <div class="key-cell"><div class="top-label">x√y</div><button class="g-btn" onclick="press('yx')">yᵡ</button></div>
+        </div>
+        <!-- BOTTOM SECTION: 4 Columns x 5 Rows -->
+        <div class="bottom-grid">
+            <div class="key-cell"><div class="top-label">cp</div><button class="o-btn" onclick="press('CE')">CE</button></div>
+            <div class="key-cell"><div class="top-label">subr</div><button class="g-btn" onclick="press('(')">(</button></div>
+            <div class="key-cell"><div class="top-label">rtn</div><button class="g-btn" onclick="press(')')">)</button></div>
+            <div class="key-cell"><div class="top-label">pause</div><button class="o-btn" onclick="press('/')">/</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('7')">7</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('8')">8</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('9')">9</button></div>
+            <div class="key-cell"><div class="top-label">π</div><button class="o-btn" onclick="press('*')">X</button></div>
+            <div class="key-cell"><div class="top-label">Σ+</div><button class="w-btn" onclick="press('4')">4</button></div>
+            <div class="key-cell"><div class="top-label">Σ-</div><button class="w-btn" onclick="press('5')">5</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('6')">6</button></div>
+            <div class="key-cell"><div class="top-label">rad</div><button class="o-btn" onclick="press('-')">-</button></div>
+            <div class="key-cell"><div class="top-label">mean</div><button class="w-btn" onclick="press('1')">1</button></div>
+            <div class="key-cell"><div class="top-label">p→r</div><button class="w-btn" onclick="press('2')">2</button></div>
+            <div class="key-cell"><div class="top-label">r→p</div><button class="w-btn" onclick="press('3')">3</button></div>
+            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('+')">+</button></div>
+            <div class="key-cell"><div class="top-label">s.dev</div><button class="w-btn" onclick="press('0')">0</button></div>
+            <div class="key-cell"><div class="top-label">prt</div><button class="w-btn" onclick="press('.')">.</button></div>
+            <div class="key-cell"><div class="top-label">pap</div><button class="w-btn" onclick="press('+/-')">+/-</button></div>
+            <div class="key-cell"><div class="top-label">list</div><button class="o-btn" onclick="press('=')">=</button></div>
+        </div>
+    </div>
+</div>
+<div class="side-panel">
+    <h3>Program Memory</h3>
+    <div class="steps-box" id="stepsList"></div>
+    <div class="file-controls">
+        <div class="io-btn" onclick="saveProgram()">Save Prog</div>
+        <label class="io-btn">Load Prog<input type="file" id="fileInput" style="display:none;" onchange="loadProgram(event)"></label>
+        <div class="io-btn" onclick="loadDemoBlackJack()">Load Demo: BlackJack77</div>
+    </div>
+</div>
+<script>
+    let currentInput = "0", storedValue = null, pendingOp = null, startNewInput = true;
+    let factorValue = null, factorOp = null;
+    let displayDecimals = null; // null = auto, 0-8 = fixed decimal places shown
+    let registers = Array(10).fill(0), testRegisterT = 0, angularMode = "DEG";
+    let state2nd = false, stateInv = false;
+    let parenStack = [];
+    let awaitingReg = null, awaitingGto = false, awaitingDsz = false;
+    let digitBuffer = "";
+    let returnStack = [];
+    let programSpace = Array(100).fill("Nop"), pc = 0, isLearnMode = false, isRunning = false, loopTimeout = null;
+    let nextStepDelay = 35;
+
+    const displayEl = document.getElementById('display'), stepsListEl = document.getElementById('stepsList');
+    const ind2nd = document.getElementById('ind-2nd'), indInv = document.getElementById('ind-inv');
+
+    window.onload = function() { renderProgramList(); };
+
+    // Mobile layout handling: when in portrait or narrow screens, place program memory below
+    // the calculator and animate its entrance while keeping the calculator sticky/static.
+    function updateMobileLayout() {
+        const isPortrait = window.matchMedia('(orientation: portrait)').matches || window.innerWidth <= 700;
+        const side = document.querySelector('.side-panel');
+        if (!side) return;
+        side.classList.remove('mobile-enter','mobile-exit');
+        if (isPortrait) {
+            // add enter animation class briefly
+            side.classList.add('mobile-enter');
+            // ensure calculator stays visible and static
+            document.querySelector('.calculator').style.pointerEvents = 'auto';
+        } else {
+            side.classList.add('mobile-exit');
+            document.querySelector('.calculator').style.pointerEvents = '';
+        }
+    }
+    window.addEventListener('resize', updateMobileLayout);
+    window.addEventListener('orientationchange', updateMobileLayout);
+    // run once on load
+    setTimeout(updateMobileLayout, 60);
+
+    function toggle2nd(force) { state2nd = (force !== undefined) ? force : !state2nd; ind2nd.className = state2nd ? "active" : ""; }
+    function toggleInv(force) { stateInv = (force !== undefined) ? force : !stateInv; indInv.className = stateInv ? "active" : ""; }
+
+    function renderProgramList() {
+        stepsListEl.innerHTML = '';
+        for (let i = 0; i < 100; i++) {
+            let row = document.createElement('div');
+            row.className = 'step-item' + (i === pc ? ' active' : '') + (programSpace[i] !== "Nop" ? ' filled' : '');
+            row.id = 'step-' + i;
+            row.style.cursor = isLearnMode ? "pointer" : "default";
+            
+            row.onclick = (function(index) {
+                return function() {
+                    if (isLearnMode) {
+                        pc = index;
+                        renderProgramList();
+                        updateDisplay(currentInput);
+                    }
+                };
+            })(i);
+
+            let lbl = document.createElement('span'); lbl.textContent = 'Step ' + String(i).padStart(2, '0');
+            let cmd = document.createElement('span'); cmd.textContent = programSpace[i];
+            row.appendChild(lbl); row.appendChild(cmd); stepsListEl.appendChild(row);
+        }
+        let activeRow = document.getElementById('step-' + pc);
+        if (activeRow) activeRow.scrollIntoView({ block: 'nearest' });
+    }
+    function updateDisplay(val) {
+        if (isLearnMode) {
+            displayEl.textContent = String(pc).padStart(2, '0') + '  ' + programSpace[pc].substring(0,6).toUpperCase().padEnd(6, ' ');
+            return;
+        }
+        let str = String(val);
+        if (str === "NaN" || str === "Infinity" || str === "-Infinity") { displayEl.textContent = "    Error.   "; return; }
+        let num = parseFloat(str);
+        // If a fixed display precision is set, honor it (0-8) without altering internal value
+        if (displayDecimals !== null && Number.isFinite(num)) {
+            let formatted = num.toFixed(displayDecimals);
+            if (!formatted.includes('.')) formatted += '.';
+            if (formatted.length > 12) formatted = formatted.substring(0, 12);
+            displayEl.textContent = formatted;
+            return;
+        }
+        if (Math.abs(num) >= 1e10 || (Math.abs(num) < 1e-4 && num !== 0)) {
+            let parts = num.toExponential(7).split('e');
+            let exp = parseInt(parts[1]);
+            displayEl.textContent = parseFloat(parts[0]).toFixed(5) + " " + (exp >= 0 ? "+" + String(exp).padStart(2,'0') : String(exp).padStart(3,'0'));
+            return;
+        }
+        if (!str.includes('.')) str += '.';
+        if (str.length > 12) str = str.substring(0, 12);
+        displayEl.textContent = str;
+    }
+    function getRad(v) { return angularMode === "DEG" ? v * Math.PI / 180 : v; }
+    function getAng(v) { return angularMode === "DEG" ? v * 180 / Math.PI : v; }
+    function applyOp(left, op, right) {
+        switch (op) {
+            case '+': return left + right;
+            case '-': return left - right;
+            case '*': return left * right;
+            case '/': return left / right;
+            case 'yx': return Math.pow(left, right);
+        }
+        return right;
+    }
+
+    function press(key) {
+        if (key === '2nd') { toggle2nd(); return; }
+        if (key === 'INV' && !isLearnMode) { toggleInv(); return; }
+        let activeKey = key;
+        if (state2nd) {
+            toggle2nd(false);
+            if (key === 'lnx') activeKey = 'log';
+            else if (key === 'ex') activeKey = '10x';
+            else if (key === 'LRN') activeKey = 'fn';
+            else if (key === 'GTO') activeKey = 'dsz';
+            else if (key === 'sin') activeKey = 'abs';
+            else if (key === 'cos') activeKey = 'int';
+            else if (key === 'tan') activeKey = '1/x';
+            else if (key === 'SST') activeKey = 'bst';
+            else if (key === 'xt') activeKey = 'x=t';
+            else if (key === 'STO') activeKey = 'CMs';
+            else if (key === 'RCL') activeKey = 'exc';
+            else if (key === 'SUM') activeKey = 'prod';
+            else if (key === 'R/S') activeKey = 'nop';
+            else if (key === 'RST') activeKey = 'x>=t';
+            else if (key === 'x2') activeKey = 'sqrt';
+            else if (key === 'EE') activeKey = 'fix';
+            else if (key === 'yx') activeKey = 'root_y';
+            else if (key === 'CE') activeKey = 'cp';
+            else if (key === '(') activeKey = 'subr';
+            else if (key === ')') activeKey = 'rtn';
+            else if (key === '/') activeKey = 'pause';
+            else if (key === '*') activeKey = 'pi';
+            else if (key === '-') activeKey = 'rad';
+            else if (key === '4') activeKey = 'sigma_plus';
+            else if (key === '5') activeKey = 'sigma_minus';
+            else if (key === '+') activeKey = 'mean';
+            else if (key === '1') activeKey = 'p_r';
+            else if (key === '2') activeKey = 'r_p';
+            else if (key === '0') activeKey = 's_dev';
+            else if (key === '.') activeKey = 'prt';
+            else if (key === '+/-') activeKey = 'pap';
+            else if (key === '=') activeKey = 'list';
+        }
+        let applyInv = stateInv;
+        if (applyInv && ['sin', 'cos', 'tan', 'lnx', 'x2', 'log'].includes(activeKey)) { toggleInv(false); }
+
+        if (isLearnMode && !['LRN', 'SST', 'bst'].includes(activeKey)) {
+            programSpace[pc] = activeKey; pc = (pc + 1) % 100; renderProgramList(); updateDisplay(currentInput); return;
+        }
+        if (awaitingReg) {
+            if (!isNaN(activeKey)) {
+                let r = parseInt(activeKey), cur = parseFloat(currentInput);
+                if (awaitingReg === 'STO') { registers[r] = cur; startNewInput = true; }
+                else if (awaitingReg === 'RCL') { currentInput = String(registers[r]); updateDisplay(currentInput); startNewInput = true; }
+                else if (awaitingReg === 'exc') { let t = registers[r]; registers[r] = cur; currentInput = String(t); updateDisplay(currentInput); startNewInput = true; }
+                else if (awaitingReg === 'SUM') {
+                    if (applyInv) registers[r] -= cur;
+                    else registers[r] += cur;
+                }
+                else if (awaitingReg === 'prod') {
+                    if (applyInv) registers[r] /= cur;
+                    else registers[r] *= cur;
+                }
+                else if (awaitingReg === 'fix') {
+                    // set display decimal places (0-8) without altering internal value
+                    let n = parseInt(activeKey);
+                    if (!isNaN(n)) {
+                        displayDecimals = Math.max(0, Math.min(8, n));
+                        updateDisplay(currentInput);
+                    }
+                }
+            }
+            awaitingReg = null; return;
+        }
+        if (awaitingGto || awaitingDsz) {
+            if (!isNaN(activeKey)) {
+                digitBuffer += activeKey;
+                if (digitBuffer.length === 2) {
+                    let addr = parseInt(digitBuffer);
+                    if (addr >= 0 && addr < 100) {
+                        if (awaitingGto) pc = addr;
+                        else if (awaitingDsz) { registers[0]--; if (registers[0] > 0) pc = addr; }
+                    }
+                    awaitingGto = awaitingDsz = false; digitBuffer = ""; renderProgramList();
+                }
+            } else { awaitingGto = awaitingDsz = false; digitBuffer = ""; renderProgramList(); }
+            return;
+        }
+        if (!isNaN(activeKey)) {
+            if (startNewInput) { currentInput = activeKey; startNewInput = false; }
+            else { if (currentInput === "0") currentInput = activeKey; else currentInput += activeKey; }
+            updateDisplay(currentInput); return;
+        }
+        if (activeKey === '.') {
+            if (startNewInput) { currentInput = "0."; startNewInput = false; }
+            else if (!currentInput.includes('.')) currentInput += '.';
+            updateDisplay(currentInput); return;
+        }
+        let val = parseFloat(currentInput);
+        switch (activeKey) {
+            case 'sin': val = applyInv ? getAng(Math.asin(val)) : Math.sin(getRad(val)); break;
+            case 'cos': val = applyInv ? getAng(Math.acos(val)) : Math.cos(getRad(val)); break;
+            case 'tan': val = applyInv ? getAng(Math.atan(val)) : Math.tan(getRad(val)); break;
+            case 'lnx': val = applyInv ? Math.exp(val) : Math.log(val); break;
+            case 'log': val = applyInv ? Math.pow(10, val) : Math.log10(val); break;
+            case 'ex': val = Math.exp(val); break;
+            case '10x': val = Math.pow(10, val); break;
+            case '1/x': val = 1 / val; break;
+            case 'x2': val = applyInv ? Math.sqrt(val) : Math.pow(val, 2); break;
+            case 'sqrt': val = Math.sqrt(val); break;
+            case 'abs': val = Math.abs(val); break;
+            case 'int': val = Math.floor(val); break;
+            case 'pi': val = Math.PI; break;
+            case '+/-': val = -val; break;
+            case 'xt': let tempT = testRegisterT; testRegisterT = val; val = tempT; break;
+            case 'cp': programSpace = Array(100).fill("Nop"); pc = 0; returnStack = []; renderProgramList(); updateDisplay(currentInput); return;
+            case 'STO': case 'RCL': case 'SUM': case 'exc': case 'prod': case 'fix': awaitingReg = activeKey; return;
+            case 'CMs': registers.fill(0); renderProgramList(); updateDisplay(currentInput); return;
+            case 'pause': nextStepDelay = 500; return;
+            case 'subr':
+                parenStack.push({ storedValue, pendingOp, factorValue, factorOp });
+                storedValue = null; pendingOp = null; factorValue = null; factorOp = null;
+                startNewInput = true; return;
+            case 'rtn':
+                let result = parseFloat(currentInput);
+                if (factorOp) {
+                    result = applyOp(factorValue, factorOp, result);
+                    factorOp = null; factorValue = null;
+                }
+                if (pendingOp) {
+                    result = applyOp(storedValue, pendingOp, result);
+                    pendingOp = null; storedValue = null;
+                }
+                currentInput = String(result);
+                if (parenStack.length > 0) {
+                    let frame = parenStack.pop();
+                    storedValue = frame.storedValue;
+                    pendingOp = frame.pendingOp;
+                    factorValue = frame.factorValue;
+                    factorOp = frame.factorOp;
+                }
+                updateDisplay(currentInput);
+                startNewInput = true;
+                return;
+            case 'CE': currentInput = "0"; updateDisplay(currentInput); return;
+            case 'CLR': currentInput = "0"; storedValue = null; pendingOp = null; factorValue = null; factorOp = null; parenStack = []; startNewInput = true; updateDisplay(currentInput); return;
+            case 'rad': angularMode = (angularMode === "DEG") ? "RAD" : "DEG"; return;
+            case 'GTO': awaitingGto = true; digitBuffer = ""; return;
+            case 'dsz': awaitingDsz = true; digitBuffer = ""; return;
+            case 'LRN': isLearnMode = !isLearnMode; renderProgramList(); updateDisplay(currentInput); return;
+            case 'RST': pc = 0; renderProgramList(); if (isRunning) { isRunning = false; clearTimeout(loopTimeout); } return;
+            case 'SST': executeSingleStep(); return;
+            case 'bst': pc = (pc - 1 + 100) % 100; renderProgramList(); return;
+            case 'x=t': {
+                let d1 = parseInt(programSpace[(pc + 1) % 100]);
+                let d2 = parseInt(programSpace[(pc + 2) % 100]);
+                let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+                let comparison = stateInv ? (parseFloat(currentInput) !== testRegisterT) : (parseFloat(currentInput) === testRegisterT);
+                if (comparison && !isNaN(target)) {
+                    pc = target % 100;
+                } else {
+                    pc = (pc + 3) % 100; // skip the two NN digits
+                }
+                toggleInv(false);
+                renderProgramList(); return;
+            }
+            case 'x>=t': {
+                let d1 = parseInt(programSpace[(pc + 1) % 100]);
+                let d2 = parseInt(programSpace[(pc + 2) % 100]);
+                let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+                let comparison = stateInv ? (parseFloat(currentInput) < testRegisterT) : (parseFloat(currentInput) >= testRegisterT);
+                if (comparison && !isNaN(target)) {
+                    pc = target % 100;
+                } else {
+                    pc = (pc + 3) % 100; // skip the two NN digits
+                }
+                toggleInv(false);
+                renderProgramList(); return;
+            }
+            case 'R/S': if (isRunning) { isRunning = false; clearTimeout(loopTimeout); } else { isRunning = true; runProgramLoop(); } startNewInput = true; return;
+        }
+        if (['sin','cos','tan','lnx','log','ex','10x','1/x','x2','sqrt','abs','int','pi','+/-','exc','xt'].includes(activeKey)) {
+            currentInput = String(val); updateDisplay(currentInput); startNewInput = true; return;
+        }
+        if (['+', '-', '*', '/', 'yx'].includes(activeKey)) {
+            let cur = parseFloat(currentInput);
+            if (activeKey === '+' || activeKey === '-') {
+                if (factorOp) {
+                    cur = applyOp(factorValue, factorOp, cur);
+                    factorValue = null; factorOp = null;
+                }
+                if (pendingOp) {
+                    storedValue = applyOp(storedValue, pendingOp, cur);
+                } else {
+                    storedValue = cur;
+                }
+                currentInput = String(cur);
+                updateDisplay(currentInput);
+                pendingOp = activeKey;
+                startNewInput = true;
+                return;
+            }
+            if (factorOp) {
+                factorValue = applyOp(factorValue, factorOp, cur);
+            } else {
+                factorValue = cur;
+            }
+            factorOp = activeKey;
+            startNewInput = true;
+            return;
+        }
+        if (activeKey === '=') {
+            let cur = parseFloat(currentInput);
+            if (factorOp) {
+                cur = applyOp(factorValue, factorOp, cur);
+                factorOp = null; factorValue = null;
+            }
+            if (pendingOp) {
+                cur = applyOp(storedValue, pendingOp, cur);
+                pendingOp = null; storedValue = null;
+            }
+            currentInput = String(cur);
+            updateDisplay(currentInput);
+            startNewInput = true;
+            return;
+        }
+    }
+    function executePending() {
+        let cur = parseFloat(currentInput), res = storedValue;
+        switch(pendingOp) {
+            case '+': res += cur; break; case '-': res -= cur; break; case '*': res *= cur; break; case '/': res /= cur; break;
+            case 'yx': res = Math.pow(res, cur); break;
+        }
+        currentInput = String(res); updateDisplay(currentInput);
+    }
+    function executeSingleStep() {
+        let cmd = programSpace[pc];
+        nextStepDelay = 35;
+        if (cmd === 'Nop' || cmd === 'nop') { pc = (pc + 1) % 100; renderProgramList(); return true; }
+        if (cmd === 'R/S') { isRunning = false; startNewInput = true; pc = (pc + 1) % 100; renderProgramList(); return false; }
+        
+        // --- TRUE TI HARDWARE CONTROLLER CONDITIONAL SKIP PATTERNS ---
+        if (cmd === 'x=t') {
+            let d1 = parseInt(programSpace[(pc + 1) % 100]);
+            let d2 = parseInt(programSpace[(pc + 2) % 100]);
+            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+            if (parseFloat(currentInput) === testRegisterT && !isNaN(target)) {
+                pc = target % 100;
+            } else {
+                pc = (pc + 3) % 100; // skip the two NN digits
+            }
+            toggleInv(false);
+            renderProgramList(); return true;
+        }
+        if (cmd === 'x>=t') {
+            let d1 = parseInt(programSpace[(pc + 1) % 100]);
+            let d2 = parseInt(programSpace[(pc + 2) % 100]);
+            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+            let comparison = stateInv ? (parseFloat(currentInput) < testRegisterT) : (parseFloat(currentInput) >= testRegisterT);
+            if (comparison && !isNaN(target)) {
+                pc = target % 100;
+            } else {
+                pc = (pc + 3) % 100; // skip the two NN digits
+            }
+            toggleInv(false);
+            renderProgramList(); return true;
+        }
+        if (cmd === 'dsz') {
+            registers[0]--;
+            if (registers[0] > 0) { pc = (pc + 1) % 100; } 
+            else { pc = (pc + 3) % 100; }
+            renderProgramList(); return true;
+        }
+
+        if (cmd === 'CMs') { press(cmd); pc = (pc + 1) % 100; renderProgramList(); return true; }
+        if (['STO', 'RCL', 'SUM', 'exc', 'prod', 'fix'].includes(cmd)) { press(cmd); press(programSpace[(pc + 1) % 100]); pc = (pc + 2) % 100; renderProgramList(); return true; }
+        if (cmd === 'subr') {
+            let d1 = parseInt(programSpace[(pc + 1) % 100]);
+            let d2 = parseInt(programSpace[(pc + 2) % 100]);
+            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+            if (!isNaN(target)) {
+                returnStack.push((pc + 3) % 100);
+                pc = target % 100;
+            } else {
+                pc = (pc + 3) % 100;
+            }
+            renderProgramList(); return true;
+        }
+        if (cmd === 'rtn') {
+            pc = returnStack.length > 0 ? returnStack.pop() : (pc + 1) % 100;
+            renderProgramList(); return true;
+        }
+        if (cmd === 'GTO') {
+            let d1 = parseInt(programSpace[(pc + 1) % 100]);
+            let d2 = parseInt(programSpace[(pc + 2) % 100]);
+            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
+            pc = isNaN(target) ? (pc + 3) % 100 : target % 100;
+            renderProgramList(); return true;
+        }
+        if (cmd === 'RST') {
+            returnStack = [];
+            pc = 0;
+            renderProgramList();
+            return true;
+        }
+        press(cmd); pc = (pc + 1) % 100; renderProgramList(); return true;
+    }
+    function runProgramLoop() {
+        if (!isRunning) return;
+        if (executeSingleStep() && isRunning) {
+            loopTimeout = setTimeout(runProgramLoop, nextStepDelay);
+        } else {
+            isRunning = false;
+        }
+    }
+    function saveProgram() {
+        let text = JSON.stringify(programSpace);
+        let blob = new Blob([text], { type: 'text/plain' });
+        let anchor = document.createElement('a');
+        anchor.download = 'sr56_program.txt';
+        anchor.href = window.URL.createObjectURL(blob);
+        anchor.click();
+    }
+    function loadProgram(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+        let reader = new FileReader();
+        reader.onload = function() {
+            try {
+                let parsed = JSON.parse(reader.result);
+                if (Array.isArray(parsed) && parsed.length === 100) {
+                    programSpace = parsed; pc = 0; renderProgramList(); updateDisplay(currentInput);
+                }
+            } catch(e) { alert('Invalid program file format.'); }
+            event.target.value = '';
+        };
+        reader.readAsText(file);
+    }
+    // Eddie's BlackJack program written in 1977, loaded into memory for testing and demonstration purposes.
+    // Load Game, Press GTO 86 R/S to run. Enter 8055 R/S to HIT or just R/S for dealer's hand and display the results. R/S for next hand.
+    // BooBoo is a bust of either hand. BB.DD is Boss.Dealer hands.
+    function loadDemoBlackJack() {
+        programSpace = Array(100).fill("Nop");
+        let demo = [
+            "xt","RCL","4","x=t","2","6","subr","4","0","int","SUM","2","RCL","2","subr","5","9","xt","RCL","7","x>=t","0","6","GTO","7","4","subr","4","0","int","SUM","1","RCL","1","subr","5","9","=","R/S","RST","pi","+","RCL","0","=","yx","8","-","int","=","STO","0","*","1","1","+","1","=","rtn","xt","RCL","6","x>=t","9","7","xt","pause","pause","RCL","5","R/S","GTO","8","6","xt","*",".","0","1","fix","2","+","RCL","1","=","R/S","0","STO","1","STO","2","fix","0","RCL","4","R/S","RST","xt","pause","rtn"
+        ];
+        for (let i = 0; i < demo.length; i++) {
+            programSpace[i] = demo[i];
+        }
+        registers[4] = 8055;
+        registers[5] = 800800;
+        registers[6] = 21;
+        registers[7] = 16;
+        pc = 0; currentInput = '0'; startNewInput = true;
+        renderProgramList(); updateDisplay(currentInput);
+    }
+    window.addEventListener('keydown', (e) => {
+        if (e.key >= '0' && e.key <= '9') press(e.key);
+        if (e.key === '.') press('.'); if (e.key === '+') press('+'); if (e.key === '-') press('-');
+        if (e.key === '*') press('*'); if (e.key === '/') press('/'); if (e.key === '(' || e.key === ')') press(e.key);
+        if (e.key === 'Enter' || e.key === '=') press('='); if (e.key === 'Escape') press('CLR');
+    });
+</script>
+</body>
+</html>
