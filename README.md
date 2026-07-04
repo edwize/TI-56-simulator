@@ -1,14 +1,24 @@
-# TI-56-simulator
-Simulates my childhood experience using my dad's first programmable calculator
+# TI-56 Simulator
 
-Eddie's BlackJack program written in 1977, loaded into memory for testing and demonstration purposes.
+Simulates the Texas Instruments SR-56 programmable Slide-Rule calculator (mostly).  
+Before desktop computers, this was my first experience programming.
 
-=== INSTRUCTIONS
-Open index.html in a Browser (non-mobile)
-Click “Load Demo”, Press GTO 86 R/S to run. 
-You’re the Boss, Click R/S again to get your first card. 
-Enter 8055 R/S to HIT or just R/S for dealer's hand and display the results. 
-R/S for next hand. 
-Their is a brief pause for the accumulating Dealer totals. 
-BooBoo is a bust of either Boss or Dealer hand. 
-BB.DD is final Boss.Dealer hand totals.
+## BlackJack Demo
+
+Eddie's BlackJack program written in 1977 at age 15 with the 100-step memory limit.  
+It can be loaded into memory for testing and demonstration purposes.
+
+## === INSTRUCTIONS ===
+
+1. Open "https://edwize.github.io/TI-56-simulator/" in a browser (non-mobile).
+2. Click "Load Demo".
+3. Key "GTO 86 R/S" to run.
+4. You're the BOSS. Click R/S again to get your first card.
+5. Key "8055 R/S" to HIT, or just "R/S" for the dealer's turn and results displayed.
+6. "R/S" for next hand.
+
+### Notes
+
+* There is a brief pause for the accumulating Dealer totals.
+* "BooBoo" is a bust of either Boss or Dealer hand.
+* "BB.DD" is final Boss.Dealer hand totals.
