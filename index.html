@@ -146,12 +146,15 @@
     let digitBuffer = "";
     let returnStack = [];
     let programSpace = Array(100).fill("Nop"), pc = 0, isLearnMode = false, isRunning = false, loopTimeout = null;
-    let nextStepDelay = 35;
+    let nextStepDelay = 30;
 
     const displayEl = document.getElementById('display'), stepsListEl = document.getElementById('stepsList');
     const ind2nd = document.getElementById('ind-2nd'), indInv = document.getElementById('ind-inv');
 
-    window.onload = function() { renderProgramList(); };
+    window.onload = function() {
+        renderProgramList();
+        loadDemoBlackJack();
+    };
 
     // Mobile layout handling: when in portrait or narrow screens, place program memory below
     // the calculator and animate its entrance while keeping the calculator sticky/static.
