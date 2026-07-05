@@ -11,7 +11,7 @@ It can be loaded into memory for testing and demonstration purposes.
 ## === INSTRUCTIONS ===
 
 1. Open "https://edwize.github.io/TI-56-simulator/" in a browser (non-mobile).
-2. Click "Load Demo".
+2. Click "Load Demo". (preloaded on startup)
 3. Key "GTO 86 R/S" to run.
 4. You're the BOSS. Click R/S again to get your first card.
 5. Key "8055 R/S" to HIT, or just "R/S" for the dealer's turn and results displayed.
