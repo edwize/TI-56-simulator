@@ -43,7 +43,7 @@ html,body{
 .key-sub{font-size:7.5px;color:var(--gold);font-weight:700;height:11px;margin-bottom:2px;text-transform:uppercase;text-align:center;white-space:nowrap;width:100%;overflow:hidden;letter-spacing:.3px;line-height:11px}
 .key-sub.blue{color:var(--blue)}
 .key-btn{width:100%;height:38px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .05s,opacity .05s;display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
-.key-btn:active{transform:scale(.93);opacity:.85}
+.key-btn:active,.key-btn.pressed{transform:scale(.93);opacity:.85}
 .key-btn.gray{background:#48484d;color:#fff}
 .key-btn.white{background:#e5e5ea;color:#000;font-size:16px}
 .key-btn.orange{background:var(--key-orange);color:#000;font-size:15px}
@@ -371,7 +371,10 @@ let grids=[
 ];
 for(let[el,keys]of grids){
   el.innerHTML=keys.map(k=>{let c=k[3]==='o'?'orange':k[3]==='w'?'white':'gray';return`<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${c}" data-key="${k[2]}">${k[1]}</button></div>`}).join('');
-  el.addEventListener('click',e=>{let b=e.target.closest('button');if(b&&b.dataset.key)press(b.dataset.key)})
+  el.addEventListener('click',e=>{let b=e.target.closest('button');if(b&&b.dataset.key)press(b.dataset.key)});
+  el.addEventListener('touchstart',e=>{let b=e.target.closest('button');if(b)b.classList.add('pressed')},{passive:true});
+  el.addEventListener('touchend',e=>{let b=e.target.closest('button');if(b)b.classList.remove('pressed')},{passive:true});
+  el.addEventListener('touchcancel',e=>{let b=e.target.closest('button');if(b)b.classList.remove('pressed')},{passive:true})
 }
 
 renderProg();updDisp('0');updInd();loadDemo();
