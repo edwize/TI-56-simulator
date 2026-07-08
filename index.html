@@ -8,1484 +8,373 @@
 <title>TI SR-56</title>
 <style>
 :root {
-  --bg: #000;
-  --calc-bg: #1c1c1e;
-  --display-bg: #0a0000;
-  --led: #ff2d2d;
-  --key-gray: #48484d;
-  --key-light: #8e8e93;
-  --key-white: #e5e5ea;
-  --key-orange: #ff9f0a;
-  --gold: #d4a843; --blue: #5a9cf0;
-  --tab-bg: #1c1c1e;
-  --panel-bg: #1c1c1e;
-  --text: #fff;
-  --text-secondary: #8e8e93;
-  --border: #38383c;
-  --safe-bottom: env(safe-area-inset-bottom, 20px);
-  --safe-top: env(safe-area-inset-top, 20px);
+  --bg:#000; --display-bg:#0a0000; --led:#ff2d2d; --key-orange:#ff9f0a;
+  --gold:#d4a843; --blue:#5a9cf0; --panel-bg:#1c1c1e;
+  --safe-bottom:env(safe-area-inset-bottom,20px); --safe-top:env(safe-area-inset-top,20px);
 }
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-  width: 100%; min-height: 100%;
-  background: #000; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  color: var(--text); user-select: none; -webkit-user-select: none;
-  touch-action: manipulation;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{
+  width:100%;min-height:100%;background:var(--bg);color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
 }
-@font-face {
-  font-family: 'SevenSegment';
-  src: url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format('woff2'),
-       url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format('woff');
-  font-weight: normal; font-style: normal;
+@font-face{
+  font-family:'SevenSegment';
+  src:url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format('woff2'),
+      url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format('woff');
 }
 
-/* App Shell */
-.app {
-  width: 100%; max-width: 500px; margin: 0 auto;
-  padding: var(--safe-top) 0 0;
-}
+.app{width:100%;max-width:500px;margin:0 auto;padding:var(--safe-top) 0 0}
+.calc-section{padding:8px 12px 0}
+.brand-row{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px;margin-bottom:2px}
+.brand{font-style:italic;font-weight:700;font-size:15px;color:#b5b5b5;letter-spacing:2px}
+.model{font-size:11px;letter-spacing:5px;color:var(--key-orange);font-weight:700}
 
-/* Calculator Section */
-.calc-section {
-  padding: 8px 12px 0;
-}
-.brand-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 0 4px; margin-bottom: 2px;
-}
-.brand { font-style: italic; font-weight: 700; font-size: 15px; color: #b5b5b5; letter-spacing: 2px; }
-.model { font-size: 11px; letter-spacing: 5px; color: var(--key-orange); font-weight: 700; }
+.display-box{background:var(--display-bg);padding:14px 16px;border-radius:10px;border:3px solid #1a1a1d;margin-bottom:12px}
+.indicators{display:flex;gap:20px;font-size:10px;font-weight:700;color:#2a0000;margin-bottom:4px;font-family:monospace;letter-spacing:1px}
+.indicators span.active{color:var(--led);text-shadow:0 0 8px var(--led)}
+.display{font-family:'SevenSegment','Courier New',monospace;font-size:32px;font-weight:700;color:var(--led);text-align:right;height:42px;line-height:42px;white-space:pre;text-shadow:0 0 10px rgba(255,45,45,0.6);letter-spacing:3px;overflow:hidden}
 
-.display-box {
-  background: var(--display-bg); padding: 14px 16px; border-radius: 10px;
-  border: 3px solid #1a1a1d; margin-bottom: 12px;
-}
-.indicators {
-  display: flex; gap: 20px; font-size: 10px; font-weight: 700;
-  color: #2a0000; margin-bottom: 4px; font-family: monospace; letter-spacing: 1px;
-}
-.indicators span.active { color: var(--led); text-shadow: 0 0 8px var(--led); }
-.display {
-  font-family: 'SevenSegment', 'Courier New', monospace; font-size: 32px;
-  font-weight: 700; color: var(--led); text-align: right; height: 42px;
-  line-height: 42px; white-space: pre; text-shadow: 0 0 10px rgba(255,45,45,0.6);
-  letter-spacing: 3px; overflow: hidden;
-}
+.key-panel{background:var(--panel-bg);border-radius:12px;padding:14px 10px 10px}
+.key-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px 6px}
+.key-grid.bottom{grid-template-columns:repeat(4,1fr);border-top:2px solid #2c2c2e;padding-top:10px;margin-top:10px}
+.key-wrap{display:flex;flex-direction:column;align-items:center}
+.key-sub{font-size:7.5px;color:var(--gold);font-weight:700;height:11px;margin-bottom:2px;text-transform:uppercase;text-align:center;white-space:nowrap;width:100%;overflow:hidden;letter-spacing:.3px;line-height:11px}
+.key-sub.blue{color:var(--blue)}
+.key-btn{width:100%;height:38px;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:transform .05s,opacity .05s;display:flex;align-items:center;justify-content:center;letter-spacing:.5px}
+.key-btn:active{transform:scale(.93);opacity:.85}
+.key-btn.gray{background:#48484d;color:#fff}
+.key-btn.white{background:#e5e5ea;color:#000;font-size:16px}
+.key-btn.orange{background:var(--key-orange);color:#000;font-size:15px}
 
-.key-panel {
-  background: var(--panel-bg); border-radius: 12px; padding: 14px 10px 10px;
-}
-.key-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; }
-.key-grid.bottom { grid-template-columns: repeat(4, 1fr); border-top: 2px solid #2c2c2e; padding-top: 10px; margin-top: 10px; }
-.key-wrap { display: flex; flex-direction: column; align-items: center; }
-.key-sub {
-  font-size: 7.5px; color: var(--gold); font-weight: 700; height: 11px;
-  margin-bottom: 2px; text-transform: uppercase; text-align: center;
-  white-space: nowrap; width: 100%; overflow: hidden;
-  letter-spacing: 0.3px; line-height: 11px;
-}
-.key-sub.blue { color: var(--blue); }
-.key-btn {
-  width: 100%; height: 38px; border: none; border-radius: 6px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: transform 0.05s, opacity 0.05s;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; letter-spacing: 0.5px;
-}
-.key-btn:active { transform: scale(0.93); opacity: 0.85; }
-.key-btn.gray  { background: #48484d; color: #fff; }
-.key-btn.white { background: #e5e5ea; color: #000; font-size: 16px; font-weight: 600; }
-.key-btn.orange { background: var(--key-orange); color: #000; font-size: 15px; }
+.prog-section{margin:0 12px 24px;background:#141415;border-radius:12px;overflow:hidden}
+.prog-section-handle{display:flex;justify-content:center;padding:8px 0 4px;cursor:pointer}
+.prog-section-handle::after{content:'';width:36px;height:5px;background:#555;border-radius:3px}
+.prog-header{display:flex;justify-content:space-between;align-items:center;padding:0 12px 6px}
+.prog-title{font-size:14px;font-weight:700}
+.prog-pc{font-size:12px;color:var(--gold);font-weight:600}
+.prog-toolbar{display:flex;gap:4px;padding:0 10px 6px;flex-wrap:wrap}
+.prog-toolbar button{flex:1;min-width:44px;padding:6px 4px;border-radius:6px;border:none;font-size:10px;font-weight:600;cursor:pointer;background:#2c2c2e;color:#fff;transition:.1s}
+.prog-toolbar button:active{background:#48484d}
+.prog-toolbar button.run-btn{background:#34c759;color:#000}
+.prog-toolbar button.stop-btn{background:#ff3b30;color:#fff}
+.prog-toolbar button.warn-btn{background:#ff9f0a;color:#000}
 
-/* Program Memory Section */
-.prog-section {
-  margin: 0 12px 24px;
-  background: #141415; border-radius: 12px;
-  overflow: hidden;
-}
-.prog-section-handle {
-  display: flex; justify-content: center; padding: 8px 0 4px;
-  cursor: pointer;
-}
-.prog-section-handle::after {
-  content: ''; width: 36px; height: 5px;
-  background: #555; border-radius: 3px;
-}
-.prog-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 0 12px 6px;
-}
-.prog-title { font-size: 14px; font-weight: 700; }
-.prog-pc { font-size: 12px; color: var(--gold); font-weight: 600; }
-.prog-toolbar {
-  display: flex; gap: 4px; padding: 0 10px 6px; flex-wrap: wrap;
-}
-.prog-toolbar button {
-  flex: 1; min-width: 44px; padding: 6px 4px; border-radius: 6px;
-  border: none; font-size: 10px; font-weight: 600; cursor: pointer;
-  background: #2c2c2e; color: #fff; transition: 0.1s;
-}
-.prog-toolbar button:active { background: #48484d; }
-.prog-toolbar button.run-btn { background: #34c759; color: #000; }
-.prog-toolbar button.stop-btn { background: #ff3b30; color: #fff; }
-.prog-toolbar button.warn-btn { background: #ff9f0a; color: #000; }
+.prog-list{max-height:220px;overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:'SF Mono','Menlo','Courier New',monospace;font-size:12px;background:#111;margin:0 10px 8px;border-radius:8px}
+.prog-list::-webkit-scrollbar{width:6px}
+.prog-list::-webkit-scrollbar-track{background:#1a1a1d;border-radius:3px}
+.prog-list::-webkit-scrollbar-thumb{background:#48484d;border-radius:3px}
+.prog-list::-webkit-scrollbar-thumb:active{background:#6a6a6f}
+.prog-step{display:flex;align-items:center;padding:6px 8px;border-bottom:1px solid #1c1c1e;cursor:pointer}
+.prog-step:active{background:#2a2a2e}
+.prog-step.current{background:#3d1010}
+.prog-step.current .step-num,.prog-step.current .step-cmd{color:var(--led)}
+.step-num{font-size:10px;color:#555;width:32px;flex-shrink:0;font-weight:600}
+.step-cmd{color:#8e8e93;font-weight:500;flex:1;font-size:11px}
+.step-cmd.nop{color:#444}
+.prog-step.filled .step-cmd{color:#ccc}
+.prog-step.filled.current .step-cmd{color:var(--led)}
+.speed-indicator{text-align:center;font-size:10px;color:#8e8e93;padding:0 0 8px;font-weight:500}
 
-.prog-list {
-  max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
-  font-size: 12px; background: #111;
-  margin: 0 10px 8px; border-radius: 8px;
-}
-.prog-list::-webkit-scrollbar { width: 6px; }
-.prog-list::-webkit-scrollbar-track { background: #1a1a1d; border-radius: 3px; }
-.prog-list::-webkit-scrollbar-thumb { background: #48484d; border-radius: 3px; }
-.prog-list::-webkit-scrollbar-thumb:active { background: #6a6a6f; }
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-sheet{background:#1c1c1e;border-radius:16px 16px 0 0;width:100%;max-width:500px;padding:16px 16px calc(16px + var(--safe-bottom));animation:slideUp .25s ease-out}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:5px;background:#555;border-radius:3px;margin:0 auto 14px}
+.modal-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:12px}
+.modal-input-row{display:flex;gap:8px;margin-bottom:12px}
+.modal-input-row select{flex:1;padding:12px;border-radius:8px;border:1px solid #444;background:#2c2c2e;color:#fff;font-size:15px;appearance:none;text-align:center;font-weight:600}
+.modal-input-row input{flex:1;padding:12px;border-radius:8px;border:1px solid #444;background:#2c2c2e;color:#fff;font-size:15px;text-align:center}
+.modal-buttons{display:flex;gap:8px}
+.modal-buttons button{flex:1;padding:14px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+.btn-cancel{background:#2c2c2e;color:#fff}
+.btn-save{background:var(--key-orange);color:#000}
+.btn-delete{background:#ff3b30;color:#fff}
 
-.prog-step {
-  display: flex; align-items: center; padding: 6px 8px;
-  border-bottom: 1px solid #1c1c1e; transition: background 0.1s;
-  cursor: pointer;
-}
-.prog-step:active { background: #2a2a2e; }
-.prog-step.current { background: #3d1010; }
-.prog-step.current .step-num { color: var(--led); }
-.prog-step.current .step-cmd { color: var(--led); }
-.step-num {
-  font-size: 10px; color: #555; width: 32px; flex-shrink: 0;
-  font-weight: 600;
-}
-.step-cmd {
-  color: var(--text-secondary); font-weight: 500;
-  flex: 1; font-size: 11px;
-}
-.step-cmd.nop { color: #444; }
-.prog-step.filled .step-cmd { color: #ccc; }
-.prog-step.filled.current .step-cmd { color: var(--led); }
+.save-list{max-height:240px;overflow-y:auto;margin-bottom:10px}
+.save-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:8px;background:#2c2c2e;margin-bottom:6px;cursor:pointer}
+.save-item:active{background:#3a3a3d}
+.save-item .save-name{font-weight:600;font-size:14px;flex:1}
+.save-item .save-date{font-size:11px;color:#8e8e93}
+.save-del{background:none;border:none;color:#ff3b30;font-size:18px;padding:4px 8px;cursor:pointer;margin-left:8px}
 
-.speed-indicator {
-  text-align: center; font-size: 10px; color: var(--text-secondary);
-  padding: 0 0 8px; font-weight: 500;
-}
-
-/* Edit Modal */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.75); z-index: 100;
-  display: flex; align-items: flex-end; justify-content: center;
-  animation: fadeIn 0.2s;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-sheet {
-  background: #1c1c1e; border-radius: 16px 16px 0 0; width: 100%;
-  max-width: 500px; padding: 16px; animation: slideUp 0.25s ease-out;
-  padding-bottom: calc(16px + var(--safe-bottom));
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.modal-handle {
-  width: 36px; height: 5px; background: #555; border-radius: 3px;
-  margin: 0 auto 14px;
-}
-.modal-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 12px; }
-.modal-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
-.modal-input-row select {
-  flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444;
-  background: #2c2c2e; color: #fff; font-size: 15px; appearance: none;
-  text-align: center; font-weight: 600;
-}
-.modal-input-row input {
-  flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444;
-  background: #2c2c2e; color: #fff; font-size: 15px; text-align: center;
-}
-.modal-buttons { display: flex; gap: 8px; }
-.modal-buttons button {
-  flex: 1; padding: 14px; border-radius: 10px; border: none;
-  font-size: 15px; font-weight: 600; cursor: pointer;
-}
-.btn-cancel { background: #2c2c2e; color: #fff; }
-.btn-save { background: var(--key-orange); color: #000; }
-.btn-delete { background: #ff3b30; color: #fff; }
-
-/* Save/Load Modal */
-.save-list { max-height: 240px; overflow-y: auto; margin-bottom: 10px; }
-.save-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px; border-radius: 8px; background: #2c2c2e;
-  margin-bottom: 6px; cursor: pointer;
-}
-.save-item:active { background: #3a3a3d; }
-.save-item .save-name { font-weight: 600; font-size: 14px; flex: 1; }
-.save-item .save-date { font-size: 11px; color: var(--text-secondary); }
-.save-item .save-del {
-  background: none; border: none; color: #ff3b30; font-size: 18px;
-  padding: 4px 8px; cursor: pointer; margin-left: 8px;
-}
-
-/* Toast */
-.toast {
-  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-  background: #2c2c2e; color: #fff; padding: 10px 24px; border-radius: 20px;
-  font-size: 13px; font-weight: 600; z-index: 200; pointer-events: none;
-  opacity: 0; transition: opacity 0.3s;
-}
-.toast.show { opacity: 1; }
-
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#2c2c2e;color:#fff;padding:10px 24px;border-radius:20px;font-size:13px;font-weight:600;z-index:200;pointer-events:none;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}
 </style>
 </head>
 <body>
 
 <div class="app">
-  <!-- Calculator Section -->
   <div class="calc-section">
-    <div class="brand-row">
-      <span class="brand">TEXAS INSTRUMENTS</span>
-      <span class="model">SR-56</span>
-    </div>
+    <div class="brand-row"><span class="brand">TEXAS INSTRUMENTS</span><span class="model">SR-56</span></div>
     <div class="display-box">
-      <div class="indicators">
-        <span id="ind2nd" class="">2nd</span>
-        <span id="indInv" class="">INV</span>
-        <span id="indDeg">DEG</span>
-        <span id="indRad" style="display:none">RAD</span>
-      </div>
+      <div class="indicators"><span id="ind2nd" class="">2nd</span><span id="indInv" class="">INV</span><span id="indDeg">DEG</span><span id="indRad" style="display:none">RAD</span></div>
       <div class="display" id="display">0.</div>
     </div>
     <div class="key-panel">
-      <div class="key-grid" id="keyGridTop"><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="2nd">2nd</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn gray" data-key="INV">INV</button></div><div class="key-wrap"><div class="key-sub ">log</div><button class="key-btn gray" data-key="lnx">lnx</button></div><div class="key-wrap"><div class="key-sub ">10ᵡ</div><button class="key-btn gray" data-key="ex">eᵡ</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="CLR">CLR</button></div><div class="key-wrap"><div class="key-sub ">f(n)</div><button class="key-btn gray" data-key="LRN">LRN</button></div><div class="key-wrap"><div class="key-sub ">dsz</div><button class="key-btn gray" data-key="GTO">GTO</button></div><div class="key-wrap"><div class="key-sub ">|x|</div><button class="key-btn gray" data-key="sin">sin</button></div><div class="key-wrap"><div class="key-sub ">int</div><button class="key-btn gray" data-key="cos">cos</button></div><div class="key-wrap"><div class="key-sub ">1/x</div><button class="key-btn gray" data-key="tan">tan</button></div><div class="key-wrap"><div class="key-sub ">bst</div><button class="key-btn gray" data-key="SST">SST</button></div><div class="key-wrap"><div class="key-sub ">x=t</div><button class="key-btn gray" data-key="xt">x:t</button></div><div class="key-wrap"><div class="key-sub ">CMs</div><button class="key-btn gray" data-key="STO">STO</button></div><div class="key-wrap"><div class="key-sub ">exc</div><button class="key-btn gray" data-key="RCL">RCL</button></div><div class="key-wrap"><div class="key-sub ">prod</div><button class="key-btn gray" data-key="SUM">SUM</button></div><div class="key-wrap"><div class="key-sub ">nop</div><button class="key-btn gray" data-key="R/S">R/S</button></div><div class="key-wrap"><div class="key-sub ">x≥t</div><button class="key-btn gray" data-key="RST">RST</button></div><div class="key-wrap"><div class="key-sub ">√x</div><button class="key-btn gray" data-key="x2">x²</button></div><div class="key-wrap"><div class="key-sub ">fix</div><button class="key-btn gray" data-key="EE">EE</button></div><div class="key-wrap"><div class="key-sub ">x√y</div><button class="key-btn gray" data-key="yx">yᵡ</button></div></div>
-      <div class="key-grid bottom" id="keyGridBottom"><div class="key-wrap"><div class="key-sub ">cp</div><button class="key-btn orange" data-key="CE">CE</button></div><div class="key-wrap"><div class="key-sub ">subr</div><button class="key-btn gray" data-key="(">(</button></div><div class="key-wrap"><div class="key-sub ">rtn</div><button class="key-btn gray" data-key=")">)</button></div><div class="key-wrap"><div class="key-sub ">pause</div><button class="key-btn orange" data-key="/">/</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="7">7</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="8">8</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="9">9</button></div><div class="key-wrap"><div class="key-sub ">π</div><button class="key-btn orange" data-key="*">X</button></div><div class="key-wrap"><div class="key-sub blue">Σ+</div><button class="key-btn white" data-key="4">4</button></div><div class="key-wrap"><div class="key-sub blue">Σ-</div><button class="key-btn white" data-key="5">5</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="6">6</button></div><div class="key-wrap"><div class="key-sub ">rad</div><button class="key-btn orange" data-key="-">-</button></div><div class="key-wrap"><div class="key-sub blue">mean</div><button class="key-btn white" data-key="1">1</button></div><div class="key-wrap"><div class="key-sub blue">p→r</div><button class="key-btn white" data-key="2">2</button></div><div class="key-wrap"><div class="key-sub blue">r→p</div><button class="key-btn white" data-key="3">3</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="+">+</button></div><div class="key-wrap"><div class="key-sub blue">s.dev</div><button class="key-btn white" data-key="0">0</button></div><div class="key-wrap"><div class="key-sub blue">prt</div><button class="key-btn white" data-key=".">.</button></div><div class="key-wrap"><div class="key-sub blue">pap</div><button class="key-btn white" data-key="+/-">+/-</button></div><div class="key-wrap"><div class="key-sub ">list</div><button class="key-btn orange" data-key="=">=</button></div></div>
+      <div class="key-grid" id="kgTop"><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="2nd">2nd</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn gray" data-key="INV">INV</button></div><div class="key-wrap"><div class="key-sub ">log</div><button class="key-btn gray" data-key="lnx">lnx</button></div><div class="key-wrap"><div class="key-sub ">10ᵡ</div><button class="key-btn gray" data-key="ex">eᵡ</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="CLR">CLR</button></div><div class="key-wrap"><div class="key-sub ">f(n)</div><button class="key-btn gray" data-key="LRN">LRN</button></div><div class="key-wrap"><div class="key-sub ">dsz</div><button class="key-btn gray" data-key="GTO">GTO</button></div><div class="key-wrap"><div class="key-sub ">|x|</div><button class="key-btn gray" data-key="sin">sin</button></div><div class="key-wrap"><div class="key-sub ">int</div><button class="key-btn gray" data-key="cos">cos</button></div><div class="key-wrap"><div class="key-sub ">1/x</div><button class="key-btn gray" data-key="tan">tan</button></div><div class="key-wrap"><div class="key-sub ">bst</div><button class="key-btn gray" data-key="SST">SST</button></div><div class="key-wrap"><div class="key-sub ">x=t</div><button class="key-btn gray" data-key="xt">x:t</button></div><div class="key-wrap"><div class="key-sub ">CMs</div><button class="key-btn gray" data-key="STO">STO</button></div><div class="key-wrap"><div class="key-sub ">exc</div><button class="key-btn gray" data-key="RCL">RCL</button></div><div class="key-wrap"><div class="key-sub ">prod</div><button class="key-btn gray" data-key="SUM">SUM</button></div><div class="key-wrap"><div class="key-sub ">nop</div><button class="key-btn gray" data-key="R/S">R/S</button></div><div class="key-wrap"><div class="key-sub ">x≥t</div><button class="key-btn gray" data-key="RST">RST</button></div><div class="key-wrap"><div class="key-sub ">√x</div><button class="key-btn gray" data-key="x2">x²</button></div><div class="key-wrap"><div class="key-sub ">fix</div><button class="key-btn gray" data-key="EE">EE</button></div><div class="key-wrap"><div class="key-sub ">x√y</div><button class="key-btn gray" data-key="yx">yᵡ</button></div></div>
+      <div class="key-grid bottom" id="kgBot"><div class="key-wrap"><div class="key-sub ">cp</div><button class="key-btn orange" data-key="CE">CE</button></div><div class="key-wrap"><div class="key-sub ">subr</div><button class="key-btn gray" data-key="(">(</button></div><div class="key-wrap"><div class="key-sub ">rtn</div><button class="key-btn gray" data-key=")">)</button></div><div class="key-wrap"><div class="key-sub ">pause</div><button class="key-btn orange" data-key="/">/</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="7">7</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="8">8</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="9">9</button></div><div class="key-wrap"><div class="key-sub ">π</div><button class="key-btn orange" data-key="*">X</button></div><div class="key-wrap"><div class="key-sub blue">Σ+</div><button class="key-btn white" data-key="4">4</button></div><div class="key-wrap"><div class="key-sub blue">Σ-</div><button class="key-btn white" data-key="5">5</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="6">6</button></div><div class="key-wrap"><div class="key-sub ">rad</div><button class="key-btn orange" data-key="-">-</button></div><div class="key-wrap"><div class="key-sub blue">mean</div><button class="key-btn white" data-key="1">1</button></div><div class="key-wrap"><div class="key-sub blue">p→r</div><button class="key-btn white" data-key="2">2</button></div><div class="key-wrap"><div class="key-sub blue">r→p</div><button class="key-btn white" data-key="3">3</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="+">+</button></div><div class="key-wrap"><div class="key-sub blue">s.dev</div><button class="key-btn white" data-key="0">0</button></div><div class="key-wrap"><div class="key-sub blue">prt</div><button class="key-btn white" data-key=".">.</button></div><div class="key-wrap"><div class="key-sub blue">pap</div><button class="key-btn white" data-key="+/-">+/-</button></div><div class="key-wrap"><div class="key-sub ">list</div><button class="key-btn orange" data-key="=">=</button></div></div>
     </div>
   </div>
 
-  <!-- Program Memory Section -->
   <div class="prog-section">
-    <div class="prog-section-handle" onclick="scrollToProg()"></div>
-    <div class="prog-header">
-      <span class="prog-title">Program Memory</span>
-      <span class="prog-pc" id="progPc">PC: 00</span>
-    </div>
+    <div class="prog-section-handle" onclick="document.querySelector(&#39;.prog-section&#39;).scrollIntoView({behavior:&#39;smooth&#39;})"></div>
+    <div class="prog-header"><span class="prog-title">Program Memory</span><span class="prog-pc" id="progPc">PC: 00</span></div>
     <div class="prog-toolbar">
-      <button onclick="stepBack()" title="Back Step">◀ BST</button>
-      <button onclick="stepForward()" title="Single Step">SST ▶</button>
+      <button onclick="stopRun();step(-1)">◀ BST</button>
+      <button onclick="stopRun();step(1)">SST ▶</button>
       <button class="run-btn" id="btnRun" onclick="toggleRun()">▶ Run</button>
-      <button onclick="resetPc()" title="Reset">RST</button>
+      <button onclick="resetPc()">RST</button>
       <button class="warn-btn" onclick="clearProgram()">CLR</button>
     </div>
-    <div class="prog-list" id="progList"><div class="prog-step current filled" data-step="0" onclick="editStep(0)">
-      <span class="step-num">00</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="1" onclick="editStep(1)">
-      <span class="step-num">01</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="2" onclick="editStep(2)">
-      <span class="step-num">02</span>
-      <span class="step-cmd">4</span>
-    </div><div class="prog-step filled" data-step="3" onclick="editStep(3)">
-      <span class="step-num">03</span>
-      <span class="step-cmd">x=t</span>
-    </div><div class="prog-step filled" data-step="4" onclick="editStep(4)">
-      <span class="step-num">04</span>
-      <span class="step-cmd">2</span>
-    </div><div class="prog-step filled" data-step="5" onclick="editStep(5)">
-      <span class="step-num">05</span>
-      <span class="step-cmd">6</span>
-    </div><div class="prog-step filled" data-step="6" onclick="editStep(6)">
-      <span class="step-num">06</span>
-      <span class="step-cmd">subr</span>
-    </div><div class="prog-step filled" data-step="7" onclick="editStep(7)">
-      <span class="step-num">07</span>
-      <span class="step-cmd">4</span>
-    </div><div class="prog-step filled" data-step="8" onclick="editStep(8)">
-      <span class="step-num">08</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="9" onclick="editStep(9)">
-      <span class="step-num">09</span>
-      <span class="step-cmd">int</span>
-    </div><div class="prog-step filled" data-step="10" onclick="editStep(10)">
-      <span class="step-num">10</span>
-      <span class="step-cmd">SUM</span>
-    </div><div class="prog-step filled" data-step="11" onclick="editStep(11)">
-      <span class="step-num">11</span>
-      <span class="step-cmd">2</span>
-    </div><div class="prog-step filled" data-step="12" onclick="editStep(12)">
-      <span class="step-num">12</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="13" onclick="editStep(13)">
-      <span class="step-num">13</span>
-      <span class="step-cmd">2</span>
-    </div><div class="prog-step filled" data-step="14" onclick="editStep(14)">
-      <span class="step-num">14</span>
-      <span class="step-cmd">subr</span>
-    </div><div class="prog-step filled" data-step="15" onclick="editStep(15)">
-      <span class="step-num">15</span>
-      <span class="step-cmd">5</span>
-    </div><div class="prog-step filled" data-step="16" onclick="editStep(16)">
-      <span class="step-num">16</span>
-      <span class="step-cmd">9</span>
-    </div><div class="prog-step filled" data-step="17" onclick="editStep(17)">
-      <span class="step-num">17</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="18" onclick="editStep(18)">
-      <span class="step-num">18</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="19" onclick="editStep(19)">
-      <span class="step-num">19</span>
-      <span class="step-cmd">7</span>
-    </div><div class="prog-step filled" data-step="20" onclick="editStep(20)">
-      <span class="step-num">20</span>
-      <span class="step-cmd">x&gt;=t</span>
-    </div><div class="prog-step filled" data-step="21" onclick="editStep(21)">
-      <span class="step-num">21</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="22" onclick="editStep(22)">
-      <span class="step-num">22</span>
-      <span class="step-cmd">6</span>
-    </div><div class="prog-step filled" data-step="23" onclick="editStep(23)">
-      <span class="step-num">23</span>
-      <span class="step-cmd">GTO</span>
-    </div><div class="prog-step filled" data-step="24" onclick="editStep(24)">
-      <span class="step-num">24</span>
-      <span class="step-cmd">7</span>
-    </div><div class="prog-step filled" data-step="25" onclick="editStep(25)">
-      <span class="step-num">25</span>
-      <span class="step-cmd">4</span>
-    </div><div class="prog-step filled" data-step="26" onclick="editStep(26)">
-      <span class="step-num">26</span>
-      <span class="step-cmd">subr</span>
-    </div><div class="prog-step filled" data-step="27" onclick="editStep(27)">
-      <span class="step-num">27</span>
-      <span class="step-cmd">4</span>
-    </div><div class="prog-step filled" data-step="28" onclick="editStep(28)">
-      <span class="step-num">28</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="29" onclick="editStep(29)">
-      <span class="step-num">29</span>
-      <span class="step-cmd">int</span>
-    </div><div class="prog-step filled" data-step="30" onclick="editStep(30)">
-      <span class="step-num">30</span>
-      <span class="step-cmd">SUM</span>
-    </div><div class="prog-step filled" data-step="31" onclick="editStep(31)">
-      <span class="step-num">31</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="32" onclick="editStep(32)">
-      <span class="step-num">32</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="33" onclick="editStep(33)">
-      <span class="step-num">33</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="34" onclick="editStep(34)">
-      <span class="step-num">34</span>
-      <span class="step-cmd">subr</span>
-    </div><div class="prog-step filled" data-step="35" onclick="editStep(35)">
-      <span class="step-num">35</span>
-      <span class="step-cmd">5</span>
-    </div><div class="prog-step filled" data-step="36" onclick="editStep(36)">
-      <span class="step-num">36</span>
-      <span class="step-cmd">9</span>
-    </div><div class="prog-step filled" data-step="37" onclick="editStep(37)">
-      <span class="step-num">37</span>
-      <span class="step-cmd">=</span>
-    </div><div class="prog-step filled" data-step="38" onclick="editStep(38)">
-      <span class="step-num">38</span>
-      <span class="step-cmd">R/S</span>
-    </div><div class="prog-step filled" data-step="39" onclick="editStep(39)">
-      <span class="step-num">39</span>
-      <span class="step-cmd">RST</span>
-    </div><div class="prog-step filled" data-step="40" onclick="editStep(40)">
-      <span class="step-num">40</span>
-      <span class="step-cmd">pi</span>
-    </div><div class="prog-step filled" data-step="41" onclick="editStep(41)">
-      <span class="step-num">41</span>
-      <span class="step-cmd">+</span>
-    </div><div class="prog-step filled" data-step="42" onclick="editStep(42)">
-      <span class="step-num">42</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="43" onclick="editStep(43)">
-      <span class="step-num">43</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="44" onclick="editStep(44)">
-      <span class="step-num">44</span>
-      <span class="step-cmd">=</span>
-    </div><div class="prog-step filled" data-step="45" onclick="editStep(45)">
-      <span class="step-num">45</span>
-      <span class="step-cmd">yx</span>
-    </div><div class="prog-step filled" data-step="46" onclick="editStep(46)">
-      <span class="step-num">46</span>
-      <span class="step-cmd">8</span>
-    </div><div class="prog-step filled" data-step="47" onclick="editStep(47)">
-      <span class="step-num">47</span>
-      <span class="step-cmd">-</span>
-    </div><div class="prog-step filled" data-step="48" onclick="editStep(48)">
-      <span class="step-num">48</span>
-      <span class="step-cmd">int</span>
-    </div><div class="prog-step filled" data-step="49" onclick="editStep(49)">
-      <span class="step-num">49</span>
-      <span class="step-cmd">=</span>
-    </div><div class="prog-step filled" data-step="50" onclick="editStep(50)">
-      <span class="step-num">50</span>
-      <span class="step-cmd">STO</span>
-    </div><div class="prog-step filled" data-step="51" onclick="editStep(51)">
-      <span class="step-num">51</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="52" onclick="editStep(52)">
-      <span class="step-num">52</span>
-      <span class="step-cmd">*</span>
-    </div><div class="prog-step filled" data-step="53" onclick="editStep(53)">
-      <span class="step-num">53</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="54" onclick="editStep(54)">
-      <span class="step-num">54</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="55" onclick="editStep(55)">
-      <span class="step-num">55</span>
-      <span class="step-cmd">+</span>
-    </div><div class="prog-step filled" data-step="56" onclick="editStep(56)">
-      <span class="step-num">56</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="57" onclick="editStep(57)">
-      <span class="step-num">57</span>
-      <span class="step-cmd">=</span>
-    </div><div class="prog-step filled" data-step="58" onclick="editStep(58)">
-      <span class="step-num">58</span>
-      <span class="step-cmd">rtn</span>
-    </div><div class="prog-step filled" data-step="59" onclick="editStep(59)">
-      <span class="step-num">59</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="60" onclick="editStep(60)">
-      <span class="step-num">60</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="61" onclick="editStep(61)">
-      <span class="step-num">61</span>
-      <span class="step-cmd">6</span>
-    </div><div class="prog-step filled" data-step="62" onclick="editStep(62)">
-      <span class="step-num">62</span>
-      <span class="step-cmd">x&gt;=t</span>
-    </div><div class="prog-step filled" data-step="63" onclick="editStep(63)">
-      <span class="step-num">63</span>
-      <span class="step-cmd">9</span>
-    </div><div class="prog-step filled" data-step="64" onclick="editStep(64)">
-      <span class="step-num">64</span>
-      <span class="step-cmd">7</span>
-    </div><div class="prog-step filled" data-step="65" onclick="editStep(65)">
-      <span class="step-num">65</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="66" onclick="editStep(66)">
-      <span class="step-num">66</span>
-      <span class="step-cmd">pause</span>
-    </div><div class="prog-step filled" data-step="67" onclick="editStep(67)">
-      <span class="step-num">67</span>
-      <span class="step-cmd">pause</span>
-    </div><div class="prog-step filled" data-step="68" onclick="editStep(68)">
-      <span class="step-num">68</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="69" onclick="editStep(69)">
-      <span class="step-num">69</span>
-      <span class="step-cmd">5</span>
-    </div><div class="prog-step filled" data-step="70" onclick="editStep(70)">
-      <span class="step-num">70</span>
-      <span class="step-cmd">R/S</span>
-    </div><div class="prog-step filled" data-step="71" onclick="editStep(71)">
-      <span class="step-num">71</span>
-      <span class="step-cmd">GTO</span>
-    </div><div class="prog-step filled" data-step="72" onclick="editStep(72)">
-      <span class="step-num">72</span>
-      <span class="step-cmd">8</span>
-    </div><div class="prog-step filled" data-step="73" onclick="editStep(73)">
-      <span class="step-num">73</span>
-      <span class="step-cmd">6</span>
-    </div><div class="prog-step filled" data-step="74" onclick="editStep(74)">
-      <span class="step-num">74</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="75" onclick="editStep(75)">
-      <span class="step-num">75</span>
-      <span class="step-cmd">*</span>
-    </div><div class="prog-step filled" data-step="76" onclick="editStep(76)">
-      <span class="step-num">76</span>
-      <span class="step-cmd">.</span>
-    </div><div class="prog-step filled" data-step="77" onclick="editStep(77)">
-      <span class="step-num">77</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="78" onclick="editStep(78)">
-      <span class="step-num">78</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="79" onclick="editStep(79)">
-      <span class="step-num">79</span>
-      <span class="step-cmd">fix</span>
-    </div><div class="prog-step filled" data-step="80" onclick="editStep(80)">
-      <span class="step-num">80</span>
-      <span class="step-cmd">2</span>
-    </div><div class="prog-step filled" data-step="81" onclick="editStep(81)">
-      <span class="step-num">81</span>
-      <span class="step-cmd">+</span>
-    </div><div class="prog-step filled" data-step="82" onclick="editStep(82)">
-      <span class="step-num">82</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="83" onclick="editStep(83)">
-      <span class="step-num">83</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="84" onclick="editStep(84)">
-      <span class="step-num">84</span>
-      <span class="step-cmd">=</span>
-    </div><div class="prog-step filled" data-step="85" onclick="editStep(85)">
-      <span class="step-num">85</span>
-      <span class="step-cmd">R/S</span>
-    </div><div class="prog-step filled" data-step="86" onclick="editStep(86)">
-      <span class="step-num">86</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="87" onclick="editStep(87)">
-      <span class="step-num">87</span>
-      <span class="step-cmd">STO</span>
-    </div><div class="prog-step filled" data-step="88" onclick="editStep(88)">
-      <span class="step-num">88</span>
-      <span class="step-cmd">1</span>
-    </div><div class="prog-step filled" data-step="89" onclick="editStep(89)">
-      <span class="step-num">89</span>
-      <span class="step-cmd">STO</span>
-    </div><div class="prog-step filled" data-step="90" onclick="editStep(90)">
-      <span class="step-num">90</span>
-      <span class="step-cmd">2</span>
-    </div><div class="prog-step filled" data-step="91" onclick="editStep(91)">
-      <span class="step-num">91</span>
-      <span class="step-cmd">fix</span>
-    </div><div class="prog-step filled" data-step="92" onclick="editStep(92)">
-      <span class="step-num">92</span>
-      <span class="step-cmd">0</span>
-    </div><div class="prog-step filled" data-step="93" onclick="editStep(93)">
-      <span class="step-num">93</span>
-      <span class="step-cmd">RCL</span>
-    </div><div class="prog-step filled" data-step="94" onclick="editStep(94)">
-      <span class="step-num">94</span>
-      <span class="step-cmd">4</span>
-    </div><div class="prog-step filled" data-step="95" onclick="editStep(95)">
-      <span class="step-num">95</span>
-      <span class="step-cmd">R/S</span>
-    </div><div class="prog-step filled" data-step="96" onclick="editStep(96)">
-      <span class="step-num">96</span>
-      <span class="step-cmd">RST</span>
-    </div><div class="prog-step filled" data-step="97" onclick="editStep(97)">
-      <span class="step-num">97</span>
-      <span class="step-cmd">xt</span>
-    </div><div class="prog-step filled" data-step="98" onclick="editStep(98)">
-      <span class="step-num">98</span>
-      <span class="step-cmd">pause</span>
-    </div><div class="prog-step filled" data-step="99" onclick="editStep(99)">
-      <span class="step-num">99</span>
-      <span class="step-cmd">rtn</span>
-    </div></div>
+    <div class="prog-list" id="progList"><div class="prog-step current filled" data-step="0" onclick="editStep(0)"><span class="step-num">00</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="1" onclick="editStep(1)"><span class="step-num">01</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="2" onclick="editStep(2)"><span class="step-num">02</span><span class="step-cmd">4</span></div><div class="prog-step filled" data-step="3" onclick="editStep(3)"><span class="step-num">03</span><span class="step-cmd">x=t</span></div><div class="prog-step filled" data-step="4" onclick="editStep(4)"><span class="step-num">04</span><span class="step-cmd">2</span></div><div class="prog-step filled" data-step="5" onclick="editStep(5)"><span class="step-num">05</span><span class="step-cmd">6</span></div><div class="prog-step filled" data-step="6" onclick="editStep(6)"><span class="step-num">06</span><span class="step-cmd">subr</span></div><div class="prog-step filled" data-step="7" onclick="editStep(7)"><span class="step-num">07</span><span class="step-cmd">4</span></div><div class="prog-step filled" data-step="8" onclick="editStep(8)"><span class="step-num">08</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="9" onclick="editStep(9)"><span class="step-num">09</span><span class="step-cmd">int</span></div><div class="prog-step filled" data-step="10" onclick="editStep(10)"><span class="step-num">10</span><span class="step-cmd">SUM</span></div><div class="prog-step filled" data-step="11" onclick="editStep(11)"><span class="step-num">11</span><span class="step-cmd">2</span></div><div class="prog-step filled" data-step="12" onclick="editStep(12)"><span class="step-num">12</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="13" onclick="editStep(13)"><span class="step-num">13</span><span class="step-cmd">2</span></div><div class="prog-step filled" data-step="14" onclick="editStep(14)"><span class="step-num">14</span><span class="step-cmd">subr</span></div><div class="prog-step filled" data-step="15" onclick="editStep(15)"><span class="step-num">15</span><span class="step-cmd">5</span></div><div class="prog-step filled" data-step="16" onclick="editStep(16)"><span class="step-num">16</span><span class="step-cmd">9</span></div><div class="prog-step filled" data-step="17" onclick="editStep(17)"><span class="step-num">17</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="18" onclick="editStep(18)"><span class="step-num">18</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="19" onclick="editStep(19)"><span class="step-num">19</span><span class="step-cmd">7</span></div><div class="prog-step filled" data-step="20" onclick="editStep(20)"><span class="step-num">20</span><span class="step-cmd">x&gt;=t</span></div><div class="prog-step filled" data-step="21" onclick="editStep(21)"><span class="step-num">21</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="22" onclick="editStep(22)"><span class="step-num">22</span><span class="step-cmd">6</span></div><div class="prog-step filled" data-step="23" onclick="editStep(23)"><span class="step-num">23</span><span class="step-cmd">GTO</span></div><div class="prog-step filled" data-step="24" onclick="editStep(24)"><span class="step-num">24</span><span class="step-cmd">7</span></div><div class="prog-step filled" data-step="25" onclick="editStep(25)"><span class="step-num">25</span><span class="step-cmd">4</span></div><div class="prog-step filled" data-step="26" onclick="editStep(26)"><span class="step-num">26</span><span class="step-cmd">subr</span></div><div class="prog-step filled" data-step="27" onclick="editStep(27)"><span class="step-num">27</span><span class="step-cmd">4</span></div><div class="prog-step filled" data-step="28" onclick="editStep(28)"><span class="step-num">28</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="29" onclick="editStep(29)"><span class="step-num">29</span><span class="step-cmd">int</span></div><div class="prog-step filled" data-step="30" onclick="editStep(30)"><span class="step-num">30</span><span class="step-cmd">SUM</span></div><div class="prog-step filled" data-step="31" onclick="editStep(31)"><span class="step-num">31</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="32" onclick="editStep(32)"><span class="step-num">32</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="33" onclick="editStep(33)"><span class="step-num">33</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="34" onclick="editStep(34)"><span class="step-num">34</span><span class="step-cmd">subr</span></div><div class="prog-step filled" data-step="35" onclick="editStep(35)"><span class="step-num">35</span><span class="step-cmd">5</span></div><div class="prog-step filled" data-step="36" onclick="editStep(36)"><span class="step-num">36</span><span class="step-cmd">9</span></div><div class="prog-step filled" data-step="37" onclick="editStep(37)"><span class="step-num">37</span><span class="step-cmd">=</span></div><div class="prog-step filled" data-step="38" onclick="editStep(38)"><span class="step-num">38</span><span class="step-cmd">R/S</span></div><div class="prog-step filled" data-step="39" onclick="editStep(39)"><span class="step-num">39</span><span class="step-cmd">RST</span></div><div class="prog-step filled" data-step="40" onclick="editStep(40)"><span class="step-num">40</span><span class="step-cmd">pi</span></div><div class="prog-step filled" data-step="41" onclick="editStep(41)"><span class="step-num">41</span><span class="step-cmd">+</span></div><div class="prog-step filled" data-step="42" onclick="editStep(42)"><span class="step-num">42</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="43" onclick="editStep(43)"><span class="step-num">43</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="44" onclick="editStep(44)"><span class="step-num">44</span><span class="step-cmd">=</span></div><div class="prog-step filled" data-step="45" onclick="editStep(45)"><span class="step-num">45</span><span class="step-cmd">yx</span></div><div class="prog-step filled" data-step="46" onclick="editStep(46)"><span class="step-num">46</span><span class="step-cmd">8</span></div><div class="prog-step filled" data-step="47" onclick="editStep(47)"><span class="step-num">47</span><span class="step-cmd">-</span></div><div class="prog-step filled" data-step="48" onclick="editStep(48)"><span class="step-num">48</span><span class="step-cmd">int</span></div><div class="prog-step filled" data-step="49" onclick="editStep(49)"><span class="step-num">49</span><span class="step-cmd">=</span></div><div class="prog-step filled" data-step="50" onclick="editStep(50)"><span class="step-num">50</span><span class="step-cmd">STO</span></div><div class="prog-step filled" data-step="51" onclick="editStep(51)"><span class="step-num">51</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="52" onclick="editStep(52)"><span class="step-num">52</span><span class="step-cmd">*</span></div><div class="prog-step filled" data-step="53" onclick="editStep(53)"><span class="step-num">53</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="54" onclick="editStep(54)"><span class="step-num">54</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="55" onclick="editStep(55)"><span class="step-num">55</span><span class="step-cmd">+</span></div><div class="prog-step filled" data-step="56" onclick="editStep(56)"><span class="step-num">56</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="57" onclick="editStep(57)"><span class="step-num">57</span><span class="step-cmd">=</span></div><div class="prog-step filled" data-step="58" onclick="editStep(58)"><span class="step-num">58</span><span class="step-cmd">rtn</span></div><div class="prog-step filled" data-step="59" onclick="editStep(59)"><span class="step-num">59</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="60" onclick="editStep(60)"><span class="step-num">60</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="61" onclick="editStep(61)"><span class="step-num">61</span><span class="step-cmd">6</span></div><div class="prog-step filled" data-step="62" onclick="editStep(62)"><span class="step-num">62</span><span class="step-cmd">x&gt;=t</span></div><div class="prog-step filled" data-step="63" onclick="editStep(63)"><span class="step-num">63</span><span class="step-cmd">9</span></div><div class="prog-step filled" data-step="64" onclick="editStep(64)"><span class="step-num">64</span><span class="step-cmd">7</span></div><div class="prog-step filled" data-step="65" onclick="editStep(65)"><span class="step-num">65</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="66" onclick="editStep(66)"><span class="step-num">66</span><span class="step-cmd">pause</span></div><div class="prog-step filled" data-step="67" onclick="editStep(67)"><span class="step-num">67</span><span class="step-cmd">pause</span></div><div class="prog-step filled" data-step="68" onclick="editStep(68)"><span class="step-num">68</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="69" onclick="editStep(69)"><span class="step-num">69</span><span class="step-cmd">5</span></div><div class="prog-step filled" data-step="70" onclick="editStep(70)"><span class="step-num">70</span><span class="step-cmd">R/S</span></div><div class="prog-step filled" data-step="71" onclick="editStep(71)"><span class="step-num">71</span><span class="step-cmd">GTO</span></div><div class="prog-step filled" data-step="72" onclick="editStep(72)"><span class="step-num">72</span><span class="step-cmd">8</span></div><div class="prog-step filled" data-step="73" onclick="editStep(73)"><span class="step-num">73</span><span class="step-cmd">6</span></div><div class="prog-step filled" data-step="74" onclick="editStep(74)"><span class="step-num">74</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="75" onclick="editStep(75)"><span class="step-num">75</span><span class="step-cmd">*</span></div><div class="prog-step filled" data-step="76" onclick="editStep(76)"><span class="step-num">76</span><span class="step-cmd">.</span></div><div class="prog-step filled" data-step="77" onclick="editStep(77)"><span class="step-num">77</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="78" onclick="editStep(78)"><span class="step-num">78</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="79" onclick="editStep(79)"><span class="step-num">79</span><span class="step-cmd">fix</span></div><div class="prog-step filled" data-step="80" onclick="editStep(80)"><span class="step-num">80</span><span class="step-cmd">2</span></div><div class="prog-step filled" data-step="81" onclick="editStep(81)"><span class="step-num">81</span><span class="step-cmd">+</span></div><div class="prog-step filled" data-step="82" onclick="editStep(82)"><span class="step-num">82</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="83" onclick="editStep(83)"><span class="step-num">83</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="84" onclick="editStep(84)"><span class="step-num">84</span><span class="step-cmd">=</span></div><div class="prog-step filled" data-step="85" onclick="editStep(85)"><span class="step-num">85</span><span class="step-cmd">R/S</span></div><div class="prog-step filled" data-step="86" onclick="editStep(86)"><span class="step-num">86</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="87" onclick="editStep(87)"><span class="step-num">87</span><span class="step-cmd">STO</span></div><div class="prog-step filled" data-step="88" onclick="editStep(88)"><span class="step-num">88</span><span class="step-cmd">1</span></div><div class="prog-step filled" data-step="89" onclick="editStep(89)"><span class="step-num">89</span><span class="step-cmd">STO</span></div><div class="prog-step filled" data-step="90" onclick="editStep(90)"><span class="step-num">90</span><span class="step-cmd">2</span></div><div class="prog-step filled" data-step="91" onclick="editStep(91)"><span class="step-num">91</span><span class="step-cmd">fix</span></div><div class="prog-step filled" data-step="92" onclick="editStep(92)"><span class="step-num">92</span><span class="step-cmd">0</span></div><div class="prog-step filled" data-step="93" onclick="editStep(93)"><span class="step-num">93</span><span class="step-cmd">RCL</span></div><div class="prog-step filled" data-step="94" onclick="editStep(94)"><span class="step-num">94</span><span class="step-cmd">4</span></div><div class="prog-step filled" data-step="95" onclick="editStep(95)"><span class="step-num">95</span><span class="step-cmd">R/S</span></div><div class="prog-step filled" data-step="96" onclick="editStep(96)"><span class="step-num">96</span><span class="step-cmd">RST</span></div><div class="prog-step filled" data-step="97" onclick="editStep(97)"><span class="step-num">97</span><span class="step-cmd">xt</span></div><div class="prog-step filled" data-step="98" onclick="editStep(98)"><span class="step-num">98</span><span class="step-cmd">pause</span></div><div class="prog-step filled" data-step="99" onclick="editStep(99)"><span class="step-num">99</span><span class="step-cmd">rtn</span></div></div>
     <div class="prog-toolbar">
       <button onclick="showSaveModal()">💾 Save</button>
       <button onclick="showLoadModal()">📂 Load</button>
-      <button onclick="loadDemoBlackJack()">BlackJack77</button>
+      <button onclick="loadDemo()">BlackJack77</button>
     </div>
-    <div class="speed-indicator" id="speedInfo">Tap any step to edit</div>
+    <div class="speed-indicator">Tap any step to edit</div>
   </div>
 </div>
 
-<!-- Edit Step Modal -->
-<div class="modal-overlay" id="editModal" style="display:none">
-  <div class="modal-sheet" id="editSheet">
+<div class="modal-overlay" id="editModal" style="display:none" onclick="event.target===this&amp;&amp;closeEdit()">
+  <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title" id="editTitle">Edit Step 00</div>
-    <div class="modal-input-row">
-      <select id="editCmd">
-        <option value="Nop">Nop (No Operation)</option>
-      </select>
-    </div>
-    <div class="modal-input-row" id="editArgRow" style="display:none">
-      <input type="number" id="editArg" min="0" max="99" placeholder="Register/Address (0-99)">
-    </div>
+    <div class="modal-input-row"><select id="editCmd"></select></div>
+    <div class="modal-input-row" id="editArgRow" style="display:none"><input type="number" id="editArg" min="0" max="99" placeholder="Register/Address (0-99)"></div>
     <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-cancel" onclick="closeEdit()">Cancel</button>
       <button class="btn-delete" id="btnClearStep" onclick="clearStep()">Clear</button>
       <button class="btn-save" onclick="saveStep()">Save</button>
     </div>
   </div>
 </div>
 
-<!-- Save Modal -->
-<div class="modal-overlay" id="saveModal" style="display:none">
+<div class="modal-overlay" id="saveModal" style="display:none" onclick="event.target===this&amp;&amp;closeSave()">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Save Program</div>
-    <div class="modal-input-row">
-      <input type="text" id="saveName" placeholder="Program name" maxlength="50">
-    </div>
+    <div class="modal-input-row"><input type="text" id="saveName" placeholder="Program name" maxlength="50"></div>
     <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn-cancel" onclick="closeSave()">Cancel</button>
       <button class="btn-save" onclick="doSave()">Save to Library</button>
     </div>
   </div>
 </div>
 
-<!-- Load Modal -->
-<div class="modal-overlay" id="loadModal" style="display:none">
+<div class="modal-overlay" id="loadModal" style="display:none" onclick="event.target===this&amp;&amp;closeLoad()">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">Load Program</div>
-    <div class="save-list" id="saveList">Loading...</div>
+    <div class="save-list" id="saveList"></div>
     <div class="modal-buttons">
-      <button class="btn-cancel" onclick="closeLoadModal()">Cancel</button>
-      <label class="io-btn" style="cursor:pointer;text-align:center;padding:10px;border-radius:8px;background:#2c2c2e;color:#fff;font-size:13px;font-weight:600;display:block;">
-        Import File<input type="file" id="importFile" accept=".json,.sr56" style="display:none" onchange="importProgram(event)">
-      </label>
+      <button class="btn-cancel" onclick="closeLoad()">Cancel</button>
+      <label class="btn-cancel" style="display:block;text-align:center;cursor:pointer">Import File<input type="file" accept=".json,.sr56" style="display:none" onchange="importProg(event)"></label>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast">BlackJack77 loaded! GTO 86 R/S to run.</div>
 
 <script>
-// ──────────────────────────────────────────────
-// TI SR-56 Calculator Engine
-// ──────────────────────────────────────────────
+const NOP='Nop', CMDS_NO_ARG=[NOP,'+','-','*','/','yx','root_y','=','CLR','CE','x2','sqrt','lnx','log','ex','10x','1/x','sin','cos','tan','abs','int','pi','+/-','xt','cp','CMs','pause','subr','rtn','R/S','RST','nop','rad','x=t','x>=t','fn','prt','pap','list','mean','s_dev','p_r','r_p','sigma_plus','sigma_minus'];
+const CMDS_ARG=['STO','RCL','SUM','exc','prod','fix','GTO','dsz','bst'];
+const STORAGE='sr56_programs';
 
-const CMDS_NO_ARG = [
-  'Nop','+','-','*','/','yx','root_y','=','CLR','CE','x2','sqrt','lnx','log','ex','10x',
-  '1/x','sin','cos','tan','abs','int','pi','+/-','xt','cp','CMs','pause',
-  'subr','rtn','R/S','RST','nop','rad','x=t','x>=t','fn','prt','pap','list',
-  'mean','s_dev','p_r','r_p','sigma_plus','sigma_minus'
-];
-const CMDS_WITH_ARG = ['STO','RCL','SUM','exc','prod','fix','GTO','dsz','bst'];
-
-function buildCmdOptions() {
-  let html = '';
-  for (let c of CMDS_NO_ARG) html += `<option value="${c}">${c}</option>`;
-  for (let c of CMDS_WITH_ARG) html += `<option value="${c}" data-arg="1">${c}</option>`;
-  return html;
-}
-
-// State
-let state = {
-  input: '0', stored: null, pendingOp: null, newInput: true,
-  factorVal: null, factorOp: null, decimals: null,
-  registers: Array(10).fill(0), testReg: 0,
-  angleMode: 'DEG', // DEG or RAD
-  is2nd: false, isInv: false,
-  parenStack: [],
-  awaitingReg: null, awaitingGto: false, awaitingDsz: false,
-  digitBuf: '',
-  returnStack: [],
-  program: Array(100).fill('Nop'),
-  pc: 0,
-  learnMode: false,
-  running: false,
-  runTimeout: null,
-  runDelay: 30
+let S={
+  input:'0',pendingOp:null,newInput:true,factorVal:null,factorOp:null,decimals:null,
+  regs:Array(10).fill(0),testReg:0,angleMode:'DEG',is2nd:false,isInv:false,
+  parenStack:[],awaitingReg:null,awaitingGto:false,awaitingDsz:false,digitBuf:'',
+  returnStack:[],prog:Array(100).fill(NOP),pc:0,learnMode:false,
+  running:false,runTimeout:null,runDelay:30
 };
 
-// ──────────────────────────────────────────────
-// Display
-// ──────────────────────────────────────────────
-const displayEl = document.getElementById('display');
-const ind2nd = document.getElementById('ind2nd');
-const indInv = document.getElementById('indInv');
-const indDeg = document.getElementById('indDeg');
-const indRad = document.getElementById('indRad');
+const $=id=>document.getElementById(id), D=$('display'), I2=$('ind2nd'), II=$('indInv'), ID=$('indDeg'), IR=$('indRad');
 
-function updateIndicators() {
-  ind2nd.className = state.is2nd ? 'active' : '';
-  indInv.className = state.isInv ? 'active' : '';
-  if (state.angleMode === 'DEG') {
-    indDeg.style.display = ''; indRad.style.display = 'none';
-  } else {
-    indDeg.style.display = 'none'; indRad.style.display = '';
-    indRad.className = 'active';
-  }
+function updInd() {
+  I2.className=S.is2nd?'active':''; II.className=S.isInv?'active':'';
+  if(S.angleMode==='DEG'){ID.style.display='';IR.style.display='none'}
+  else{ID.style.display='none';IR.style.display='';IR.className='active'}
 }
 
-function updateDisplay(val) {
-  updateIndicators();
-  if (state.learnMode) {
-    let cmd = state.program[state.pc] || 'Nop';
-    displayEl.textContent = String(state.pc).padStart(2,'0') + '  ' + cmd.substring(0,7).toUpperCase();
-    return;
-  }
-  let s = String(val);
-  if (s === 'NaN' || s === 'Infinity' || s === '-Infinity') {
-    displayEl.textContent = '   Error.   '; return;
-  }
-  let n = parseFloat(s);
-  if (state.decimals !== null && Number.isFinite(n)) {
-    let f = n.toFixed(state.decimals);
-    if (!f.includes('.')) f += '.';
-    if (f.length > 12) f = f.substring(0,12);
-    displayEl.textContent = f; return;
-  }
-  if (Math.abs(n) >= 1e10 || (Math.abs(n) < 1e-4 && n !== 0)) {
-    let parts = n.toExponential(7).split('e');
-    let exp = parseInt(parts[1]);
-    displayEl.textContent = parseFloat(parts[0]).toFixed(5) + ' ' + (exp>=0?'+'+String(exp).padStart(2,'0'):String(exp).padStart(3,'0'));
-    return;
-  }
-  if (!s.includes('.')) s += '.';
-  if (s.length > 12) s = s.substring(0,12);
-  displayEl.textContent = s;
+function updDisp(v) {
+  updInd();
+  if(S.learnMode){D.textContent=String(S.pc).padStart(2,'0')+'  '+(S.prog[S.pc]||NOP).substring(0,7).toUpperCase();return}
+  let s=String(v);
+  if(s==='NaN'||s==='Infinity'||s==='-Infinity'){D.textContent='   Error.   ';return}
+  let n=parseFloat(s);
+  if(S.decimals!==null&&Number.isFinite(n)){let f=n.toFixed(S.decimals);if(!f.includes('.'))f+='.';if(f.length>12)f=f.substring(0,12);D.textContent=f;return}
+  if(Math.abs(n)>=1e10||(Math.abs(n)<1e-4&&n!==0)){let p=n.toExponential(7).split('e'),e=parseInt(p[1]);D.textContent=parseFloat(p[0]).toFixed(5)+' '+(e>=0?'+'+String(e).padStart(2,'0'):String(e).padStart(3,'0'));return}
+  if(!s.includes('.'))s+='.';if(s.length>12)s=s.substring(0,12);D.textContent=s
 }
 
-function getRad(v) { return state.angleMode === 'DEG' ? v * Math.PI / 180 : v; }
-function getAng(v) { return state.angleMode === 'DEG' ? v * 180 / Math.PI : v; }
-function applyOp(l, op, r) {
-  switch(op) {
-    case '+': return l+r; case '-': return l-r; case '*': return l*r; case '/': return l/r;
-    case 'yx': return Math.pow(l, r);
-    case 'root_y': return Math.pow(l, 1 / r);
-  }
-  return r;
+function toRad(v){return S.angleMode==='DEG'?v*Math.PI/180:v}
+function toAng(v){return S.angleMode==='DEG'?v*180/Math.PI:v}
+function op(l,o,r){switch(o){case'+':return l+r;case'-':return l-r;case'*':return l*r;case'/':return l/r;case'yx':return Math.pow(l,r);case'root_y':return Math.pow(l,1/r)}return r}
+
+function res2nd(k){
+  const m={lnx:'log',ex:'10x',LRN:'fn',GTO:'dsz',sin:'abs',cos:'int',tan:'1/x',SST:'bst',xt:'x=t',STO:'CMs',RCL:'exc',SUM:'prod','R/S':'nop',RST:'x>=t',x2:'sqrt',EE:'fix',yx:'root_y',CE:'cp','(':'subr',')':'rtn','/':'pause','*':'pi','-':'rad','4':'sigma_plus','5':'sigma_minus','+':'mean','1':'p_r','2':'r_p','0':'s_dev','.':'prt','+/-':'pap','=':'list'};
+  return m[k]||k
 }
 
-// ──────────────────────────────────────────────
-// Key Press Logic
-// ──────────────────────────────────────────────
-function resolve2nd(key) {
-  const map = {
-    lnx:'log', ex:'10x', LRN:'fn', GTO:'dsz', sin:'abs', cos:'int', tan:'1/x',
-    SST:'bst', xt:'x=t', STO:'CMs', RCL:'exc', SUM:'prod', 'R/S':'nop',
-    RST:'x>=t', x2:'sqrt', EE:'fix', yx:'root_y', CE:'cp', '(':'subr',
-    ')':'rtn', '/':'pause', '*':'pi', '-':'rad', '4':'sigma_plus', '5':'sigma_minus',
-    '+':'mean', '1':'p_r', '2':'r_p', '0':'s_dev', '.':'prt', '+/-':'pap', '=':'list'
-  };
-  return map[key] || key;
-}
-
-function press(key) {
-  if (key === '2nd') { state.is2nd = !state.is2nd; updateIndicators(); return; }
-  if (key === 'INV' && !state.learnMode) { state.isInv = !state.isInv; updateIndicators(); return; }
-
-  let active = key;
-  if (state.is2nd) {
-    state.is2nd = false;
-    active = resolve2nd(key);
-  }
-  let useInv = state.isInv;
-  if (useInv && ['sin','cos','tan','lnx','x2','log'].includes(active)) {
-    // INV consumed below in switch cases
-  }
-
-  // Learn mode: record keystrokes into program memory
-  if (state.learnMode && !['LRN','SST','bst'].includes(active)) {
-    state.program[state.pc] = active;
-    state.pc = (state.pc + 1) % 100;
-    renderProgramList();
-    updateDisplay(state.input);
-    return;
-  }
-
-  // Awaiting register number (for STO, RCL, SUM, exc, prod, fix)
-  if (state.awaitingReg) {
-    if (!isNaN(active)) {
-      let r = parseInt(active);
-      let cur = parseFloat(state.input);
-      switch (state.awaitingReg) {
-        case 'STO': state.registers[r] = cur; state.newInput = true; break;
-        case 'RCL': state.input = String(state.registers[r]); updateDisplay(state.input); state.newInput = true; break;
-        case 'exc': { let t = state.registers[r]; state.registers[r] = cur; state.input = String(t); updateDisplay(state.input); state.newInput = true; break; }
-        case 'SUM':
-          state.registers[r] = useInv ? state.registers[r] - cur : state.registers[r] + cur;
-          state.newInput = true; useInv = false; break;
-        case 'prod':
-          state.registers[r] = useInv ? state.registers[r] / cur : state.registers[r] * cur;
-          state.newInput = true; useInv = false; break;
-        case 'fix':
-          if (!isNaN(r)) { state.decimals = Math.max(0, Math.min(8, r)); updateDisplay(state.input); }
-          break;
+function press(k){
+  if(k==='2nd'){S.is2nd=!S.is2nd;updInd();return}
+  if(k==='INV'&&!S.learnMode){S.isInv=!S.isInv;updInd();return}
+  let a=k;
+  if(S.is2nd){S.is2nd=false;a=res2nd(k)}
+  let inv=S.isInv;
+  if(S.learnMode&&!['LRN','SST','bst'].includes(a)){S.prog[S.pc]=a;S.pc=(S.pc+1)%100;renderProg();updDisp(S.input);return}
+  if(S.awaitingReg){
+    if(!isNaN(a)){let r=parseInt(a),c=parseFloat(S.input);
+      switch(S.awaitingReg){
+        case'STO':S.regs[r]=c;S.newInput=true;break;
+        case'RCL':S.input=String(S.regs[r]);updDisp(S.input);S.newInput=true;break;
+        case'exc':{let t=S.regs[r];S.regs[r]=c;S.input=String(t);updDisp(S.input);S.newInput=true;break}
+        case'SUM':S.regs[r]=inv?S.regs[r]-c:S.regs[r]+c;S.newInput=true;inv=false;break;
+        case'prod':S.regs[r]=inv?S.regs[r]/c:S.regs[r]*c;S.newInput=true;inv=false;break;
+        case'fix':if(!isNaN(r)){S.decimals=Math.max(0,Math.min(8,r));updDisp(S.input)}break;
       }
     }
-    state.awaitingReg = null;
-    if (useInv) state.isInv = false;
-    return;
+    S.awaitingReg=null;if(inv)S.isInv=false;return
   }
-
-  // Awaiting 2-digit address for GTO/dsz
-  if (state.awaitingGto || state.awaitingDsz) {
-    if (!isNaN(active)) {
-      state.digitBuf += active;
-      if (state.digitBuf.length === 2) {
-        let addr = parseInt(state.digitBuf);
-        if (addr >= 0 && addr < 100) {
-          if (state.awaitingGto) state.pc = addr;
-          else if (state.awaitingDsz) { state.registers[0]--; if (state.registers[0] > 0) state.pc = addr; }
-        }
-        state.awaitingGto = state.awaitingDsz = false;
-        state.digitBuf = '';
-        renderProgramList();
-      }
-    } else {
-      state.awaitingGto = state.awaitingDsz = false; state.digitBuf = '';
-      renderProgramList();
-    }
-    return;
+  if(S.awaitingGto||S.awaitingDsz){
+    if(!isNaN(a)){S.digitBuf+=a;if(S.digitBuf.length===2){let ad=parseInt(S.digitBuf);if(ad>=0&&ad<100){if(S.awaitingDsz){S.regs[0]--;if(S.regs[0]>0)S.pc=ad}else S.pc=ad}S.awaitingGto=S.awaitingDsz=false;S.digitBuf='';renderProg()}}
+    else{S.awaitingGto=S.awaitingDsz=false;S.digitBuf='';renderProg()}
+    return
   }
-
-  // Digit handling
-  if (!isNaN(active)) {
-    if (state.newInput) { state.input = active; state.newInput = false; }
-    else { if (state.input === '0') state.input = active; else state.input += active; }
-    updateDisplay(state.input); return;
+  if(!isNaN(a)){if(S.newInput){S.input=a;S.newInput=false}else{if(S.input==='0')S.input=a;else S.input+=a}updDisp(S.input);return}
+  if(a==='.'){if(S.newInput){S.input='0.';S.newInput=false}else if(!S.input.includes('.'))S.input+='.';updDisp(S.input);return}
+  let v=parseFloat(S.input);
+  switch(a){
+    case'sin':v=inv?toAng(Math.asin(v)):Math.sin(toRad(v));S.isInv=false;break
+    case'cos':v=inv?toAng(Math.acos(v)):Math.cos(toRad(v));S.isInv=false;break
+    case'tan':v=inv?toAng(Math.atan(v)):Math.tan(toRad(v));S.isInv=false;break
+    case'lnx':v=inv?Math.exp(v):Math.log(v);S.isInv=false;break
+    case'log':v=inv?Math.pow(10,v):Math.log10(v);S.isInv=false;break
+    case'ex':v=Math.exp(v);break;case'10x':v=Math.pow(10,v);break
+    case'1/x':v=1/v;break
+    case'x2':v=inv?Math.sqrt(v):v*v;S.isInv=false;break
+    case'sqrt':v=Math.sqrt(v);break;case'abs':v=Math.abs(v);break;case'int':v=Math.floor(v);break
+    case'pi':v=Math.PI;break;case'+/-':v=-v;break
+    case'xt':{let t=S.testReg;S.testReg=v;v=t;break}
+    case'cp':S.prog=Array(100).fill(NOP);S.pc=0;S.returnStack=[];renderProg();updDisp(S.input);return
+    case'CMs':S.regs.fill(0);renderProg();updDisp(S.input);return
+    case'pause':S.runDelay=500;return
+    case'STO':case'RCL':case'SUM':case'exc':case'prod':S.awaitingReg=a;return
+    case'fix':if(inv){S.decimals=null;S.isInv=false;updInd();updDisp(S.input)}else S.awaitingReg=a;return
+    case'subr':S.parenStack.push({s:S.stored,p:S.pendingOp,f:S.factorVal,fo:S.factorOp});S.stored=null;S.pendingOp=null;S.factorVal=null;S.factorOp=null;S.newInput=true;return
+    case'rtn':{let r=parseFloat(S.input);if(S.factorOp){r=op(S.factorVal,S.factorOp,r);S.factorOp=null;S.factorVal=null}if(S.pendingOp){r=op(S.stored,S.pendingOp,r);S.pendingOp=null;S.stored=null}S.input=String(r);if(S.parenStack.length>0){let f=S.parenStack.pop();S.stored=f.s;S.pendingOp=f.p;S.factorVal=f.f;S.factorOp=f.fo}updDisp(S.input);S.newInput=true;return}
+    case'CE':S.input='0';updDisp(S.input);return
+    case'CLR':S.input='0';S.stored=null;S.pendingOp=null;S.factorVal=null;S.factorOp=null;S.parenStack=[];S.newInput=true;updDisp(S.input);return
+    case'rad':S.angleMode=S.angleMode==='DEG'?'RAD':'DEG';updInd();return
+    case'LRN':S.learnMode=!S.learnMode;renderProg();updDisp(S.input);return
+    case'GTO':S.awaitingGto=true;S.digitBuf='';return
+    case'dsz':S.awaitingDsz=true;S.digitBuf='';return
+    case'RST':S.pc=0;stopRun();renderProg();return
+    case'SST':stopRun();step(1);return
+    case'bst':S.pc=(S.pc-1+100)%100;renderProg();return
+    case'x=t':case'x>=t':{let d1=parseInt(S.prog[(S.pc+1)%100]),d2=parseInt(S.prog[(S.pc+2)%100]),tgt=(isNaN(d1)?0:d1)*10+(isNaN(d2)?0:d2),cmp=a==='x=t'?(S.isInv?parseFloat(S.input)!==S.testReg:parseFloat(S.input)===S.testReg):(S.isInv?parseFloat(S.input)<S.testReg:parseFloat(S.input)>=S.testReg);S.isInv=false;if(cmp&&!isNaN(tgt))S.pc=tgt%100;else S.pc=(S.pc+3)%100;renderProg();return}
+    case'R/S':S.running?stopRun():startRun();S.newInput=true;return
   }
-  if (active === '.') {
-    if (state.newInput) { state.input = '0.'; state.newInput = false; }
-    else if (!state.input.includes('.')) state.input += '.';
-    updateDisplay(state.input); return;
+  if(['sin','cos','tan','lnx','log','ex','10x','1/x','x2','sqrt','abs','int','pi','+/-','exc','xt'].includes(a)){S.input=String(v);updDisp(S.input);S.newInput=true;return}
+  if(['+','-','*','/','yx','root_y'].includes(a)){let c=parseFloat(S.input);if(a==='+'||a==='-'){if(S.factorOp){c=op(S.factorVal,S.factorOp,c);S.factorVal=null;S.factorOp=null}if(S.pendingOp)S.stored=op(S.stored,S.pendingOp,c);else S.stored=c;S.input=String(c);updDisp(S.input);S.pendingOp=a;S.newInput=true;return}if(S.factorOp)S.factorVal=op(S.factorVal,S.factorOp,c);else S.factorVal=c;S.factorOp=a;S.newInput=true;return}
+  if(a==='='){let c=parseFloat(S.input);if(S.factorOp){c=op(S.factorVal,S.factorOp,c);S.factorOp=null;S.factorVal=null}if(S.pendingOp){c=op(S.stored,S.pendingOp,c);S.pendingOp=null;S.stored=null}S.input=String(c);updDisp(S.input);S.newInput=true}
+}
+
+function step(dir){
+  if(dir<0){S.pc=(S.pc-1+100)%100;renderProg();return}
+  let cmd=S.prog[S.pc];S.runDelay=35;
+  if(cmd===NOP||cmd==='nop')S.pc=(S.pc+1)%100;
+  else if(cmd==='R/S'){stopRun();S.newInput=true;S.pc=(S.pc+1)%100;renderProg();return false}
+  else if(cmd==='x=t'||cmd==='x>=t'){let d1=parseInt(S.prog[(S.pc+1)%100]),d2=parseInt(S.prog[(S.pc+2)%100]),tgt=(isNaN(d1)?0:d1)*10+(isNaN(d2)?0:d2),cmp=cmd==='x=t'?parseFloat(S.input)===S.testReg:(S.isInv?parseFloat(S.input)<S.testReg:parseFloat(S.input)>=S.testReg);S.isInv=false;if(cmp&&!isNaN(tgt))S.pc=tgt%100;else S.pc=(S.pc+3)%100;updInd()}
+  else if(cmd==='dsz'){S.regs[0]--;let d1=parseInt(S.prog[(S.pc+1)%100]),d2=parseInt(S.prog[(S.pc+2)%100]),tgt=(isNaN(d1)?0:d1)*10+(isNaN(d2)?0:d2);if(S.regs[0]>0&&!isNaN(tgt))S.pc=tgt%100;else S.pc=(S.pc+3)%100}
+  else if(cmd==='CMs'){press(cmd);S.pc=(S.pc+1)%100}
+  else if(['STO','RCL','SUM','exc','prod','fix'].includes(cmd)){press(cmd);press(S.prog[(S.pc+1)%100]);S.pc=(S.pc+2)%100}
+  else if(cmd==='subr'){let d1=parseInt(S.prog[(S.pc+1)%100]),d2=parseInt(S.prog[(S.pc+2)%100]),tgt=(isNaN(d1)?0:d1)*10+(isNaN(d2)?0:d2);if(!isNaN(tgt)){S.returnStack.push((S.pc+3)%100);S.pc=tgt%100}else S.pc=(S.pc+3)%100}
+  else if(cmd==='rtn')S.pc=S.returnStack.length>0?S.returnStack.pop():(S.pc+1)%100;
+  else if(cmd==='GTO'){let d1=parseInt(S.prog[(S.pc+1)%100]),d2=parseInt(S.prog[(S.pc+2)%100]),tgt=(isNaN(d1)?0:d1)*10+(isNaN(d2)?0:d2);S.pc=isNaN(tgt)?(S.pc+3)%100:tgt%100}
+  else if(cmd==='RST'){S.returnStack=[];S.pc=0}
+  else{press(cmd);S.pc=(S.pc+1)%100}
+  renderProg();return true;
+}
+
+function startRun(){S.running=true;$('btnRun').textContent='⏹ Stop';$('btnRun').className='stop-btn';S.runTimeout=setTimeout(runLoop,20)}
+function stopRun(){S.running=false;if(S.runTimeout)clearTimeout(S.runTimeout);S.runTimeout=null;$('btnRun').textContent='▶ Run';$('btnRun').className='run-btn'}
+function toggleRun(){S.running?stopRun():startRun()}
+function runLoop(){if(!S.running)return;if(step(1)&&S.running)S.runTimeout=setTimeout(runLoop,S.runDelay);else{stopRun();renderProg()}}
+
+const PL=$('progList'),PP=$('progPc');
+function renderProg(){
+  PP.textContent='PC: '+String(S.pc).padStart(2,'0');
+  let h='';
+  for(let i=0;i<100;i++){
+    let cls='prog-step';if(i===S.pc)cls+=' current';if(S.prog[i]!==NOP)cls+=' filled';
+    h+=`<div class="${cls}" data-step="${i}" onclick="editStep(${i})"><span class="step-num">${String(i).padStart(2,'0')}</span><span class="step-cmd${S.prog[i]===NOP?' nop':''}">${S.prog[i]}</span></div>`;
   }
-
-  // Operation dispatch
-  let val = parseFloat(state.input);
-  switch (active) {
-    // Trig
-    case 'sin':
-      if (useInv) val = getAng(Math.asin(val));
-      else val = Math.sin(getRad(val));
-      state.isInv = false; break;
-    case 'cos':
-      if (useInv) val = getAng(Math.acos(val));
-      else val = Math.cos(getRad(val));
-      state.isInv = false; break;
-    case 'tan':
-      if (useInv) val = getAng(Math.atan(val));
-      else val = Math.tan(getRad(val));
-      state.isInv = false; break;
-    // Log/exp
-    case 'lnx':
-      if (useInv) val = Math.exp(val);
-      else val = Math.log(val);
-      state.isInv = false; break;
-    case 'log':
-      if (useInv) val = Math.pow(10, val);
-      else val = Math.log10(val);
-      state.isInv = false; break;
-    case 'ex': val = Math.exp(val); break;
-    case '10x': val = Math.pow(10, val); break;
-    // Other unary
-    case '1/x': val = 1 / val; break;
-    case 'x2':
-      if (useInv) val = Math.sqrt(val);
-      else val = val * val;
-      state.isInv = false; break;
-    case 'sqrt': val = Math.sqrt(val); break;
-    case 'abs': val = Math.abs(val); break;
-    case 'int': val = Math.floor(val); break;
-    case 'pi': val = Math.PI; break;
-    case '+/-': val = -val; break;
-    case 'xt': { let t = state.testReg; state.testReg = val; val = t; break; }
-    // Program control
-    case 'cp':
-      state.program = Array(100).fill('Nop');
-      state.pc = 0; state.returnStack = [];
-      renderProgramList(); updateDisplay(state.input); return;
-    case 'CMs': state.registers.fill(0); renderProgramList(); updateDisplay(state.input); return;
-    case 'pause': state.runDelay = 500; return;
-    // Register ops (need digit arg)
-    case 'STO': case 'RCL': case 'SUM': case 'exc': case 'prod':
-      state.awaitingReg = active; return;
-    case 'fix':
-      if (useInv) { state.decimals = null; state.isInv = false; updateIndicators(); updateDisplay(state.input); }
-      else { state.awaitingReg = active; }
-      return;
-    // Paren/Subroutine in immediate mode
-    case 'subr':
-      state.parenStack.push({ s: state.stored, p: state.pendingOp, f: state.factorVal, fo: state.factorOp });
-      state.stored = null; state.pendingOp = null; state.factorVal = null; state.factorOp = null;
-      state.newInput = true; return;
-    case 'rtn': {
-      let r = parseFloat(state.input);
-      if (state.factorOp) { r = applyOp(state.factorVal, state.factorOp, r); state.factorOp = null; state.factorVal = null; }
-      if (state.pendingOp) { r = applyOp(state.stored, state.pendingOp, r); state.pendingOp = null; state.stored = null; }
-      state.input = String(r);
-      if (state.parenStack.length > 0) {
-        let f = state.parenStack.pop();
-        state.stored = f.s; state.pendingOp = f.p; state.factorVal = f.f; state.factorOp = f.fo;
-      }
-      updateDisplay(state.input); state.newInput = true; return;
-    }
-    // Clear
-    case 'CE': state.input = '0'; updateDisplay(state.input); return;
-    case 'CLR':
-      state.input = '0'; state.stored = null; state.pendingOp = null;
-      state.factorVal = null; state.factorOp = null; state.parenStack = [];
-      state.newInput = true; updateDisplay(state.input); return;
-    // Mode
-    case 'rad': state.angleMode = state.angleMode === 'DEG' ? 'RAD' : 'DEG'; updateIndicators(); return;
-    case 'LRN':
-      state.learnMode = !state.learnMode;
-      renderProgramList(); updateDisplay(state.input); return;
-    // Program flow immediate
-    case 'GTO': state.awaitingGto = true; state.digitBuf = ''; return;
-    case 'dsz': state.awaitingDsz = true; state.digitBuf = ''; return;
-    case 'RST': state.pc = 0; stopRunning(); renderProgramList(); return;
-    case 'SST': executeSingleStep(); return;
-    case 'bst': state.pc = (state.pc - 1 + 100) % 100; renderProgramList(); return;
-    // Conditional skips (immediate)
-    case 'x=t': {
-      let d1 = parseInt(state.program[(state.pc+1)%100]);
-      let d2 = parseInt(state.program[(state.pc+2)%100]);
-      let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-      let cmp = state.isInv ? (parseFloat(state.input) !== state.testReg) : (parseFloat(state.input) === state.testReg);
-      state.isInv = false;
-      if (cmp && !isNaN(target)) state.pc = target % 100;
-      else state.pc = (state.pc + 3) % 100;
-      renderProgramList(); return;
-    }
-    case 'x>=t': {
-      let d1 = parseInt(state.program[(state.pc+1)%100]);
-      let d2 = parseInt(state.program[(state.pc+2)%100]);
-      let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-      let cmp = state.isInv ? (parseFloat(state.input) < state.testReg) : (parseFloat(state.input) >= state.testReg);
-      state.isInv = false;
-      if (cmp && !isNaN(target)) state.pc = target % 100;
-      else state.pc = (state.pc + 3) % 100;
-      renderProgramList(); return;
-    }
-    // Run/Stop
-    case 'R/S':
-      if (state.running) stopRunning();
-      else startRunning();
-      state.newInput = true; return;
-  }
-
-  // After unary ops, update display
-  if (['sin','cos','tan','lnx','log','ex','10x','1/x','x2','sqrt','abs','int','pi','+/-','exc','xt'].includes(active)) {
-    state.input = String(val); updateDisplay(state.input); state.newInput = true; return;
-  }
-
-  // Binary operators
-  if (['+','-','*','/','yx','root_y'].includes(active)) {
-    let cur = parseFloat(state.input);
-    if (active === '+' || active === '-') {
-      if (state.factorOp) { cur = applyOp(state.factorVal, state.factorOp, cur); state.factorVal = null; state.factorOp = null; }
-      if (state.pendingOp) { state.stored = applyOp(state.stored, state.pendingOp, cur); }
-      else { state.stored = cur; }
-      state.input = String(cur); updateDisplay(state.input);
-      state.pendingOp = active; state.newInput = true; return;
-    }
-    if (state.factorOp) { state.factorVal = applyOp(state.factorVal, state.factorOp, cur); }
-    else { state.factorVal = cur; }
-    state.factorOp = active; state.newInput = true; return;
-  }
-
-  if (active === '=') {
-    let cur = parseFloat(state.input);
-    if (state.factorOp) { cur = applyOp(state.factorVal, state.factorOp, cur); state.factorOp = null; state.factorVal = null; }
-    if (state.pendingOp) { cur = applyOp(state.stored, state.pendingOp, cur); state.pendingOp = null; state.stored = null; }
-    state.input = String(cur); updateDisplay(state.input); state.newInput = true; return;
-  }
+  PL.innerHTML=h;
+  let el=PL.querySelector(`[data-step="${S.pc}"]`);
+  if(el){let lr=PL.getBoundingClientRect(),er=el.getBoundingClientRect();PL.scrollTop=er.top-lr.top+PL.scrollTop-lr.height/2+er.height/2}
 }
 
-// ──────────────────────────────────────────────
-// Program Execution
-// ──────────────────────────────────────────────
-function executeSingleStep() {
-  let cmd = state.program[state.pc];
-  state.runDelay = 35;
+function resetPc(){stopRun();S.pc=0;renderProg()}
+function clearProgram(){if(confirm('Clear entire program memory?')){stopRun();S.prog=Array(100).fill(NOP);S.pc=0;S.returnStack=[];renderProg()}}
 
-  if (cmd === 'Nop' || cmd === 'nop') {
-    state.pc = (state.pc + 1) % 100; return true;
-  }
-  if (cmd === 'R/S') {
-    stopRunning(); state.newInput = true;
-    state.pc = (state.pc + 1) % 100; return false;
-  }
+let editIdx=-1;
+function editStep(i){stopRun();editIdx=i;$('editTitle').textContent='Edit Step '+String(i).padStart(2,'0');let sel=$('editCmd');sel.innerHTML=CMDS_NO_ARG.map(c=>`<option value="${c}">${c}</option>`).join('')+CMDS_ARG.map(c=>`<option value="${c}" data-arg="1">${c}</option>`).join('');sel.value=S.prog[i];let arg=CMDS_ARG.includes(S.prog[i]);$('editArgRow').style.display=arg?'flex':'none';if(arg){let nv=S.prog[(i+1)%100];$('editArg').value=(!isNaN(nv)&&nv!==NOP)?nv:''}else $('editArg').value='';$('btnClearStep').style.display=S.prog[i]!==NOP?'':'none';$('editModal').style.display='flex'}
+function closeEdit(){$('editModal').style.display='none';editIdx=-1}
+function clearStep(){if(editIdx>=0){S.prog[editIdx]=NOP;renderProg();closeEdit()}}
+function saveStep(){if(editIdx<0)return;let c=$('editCmd').value;S.prog[editIdx]=c;if(CMDS_ARG.includes(c)){let a=parseInt($('editArg').value);if(!isNaN(a)&&a>=0&&a<=99)S.prog[(editIdx+1)%100]=String(a)}renderProg();closeEdit()}
+$('editCmd').onchange=function(){let a=CMDS_ARG.includes(this.value);$('editArgRow').style.display=a?'flex':'none';if(!a)$('editArg').value=''}
 
-  // x=t conditional
-  if (cmd === 'x=t') {
-    let d1 = parseInt(state.program[(state.pc+1)%100]);
-    let d2 = parseInt(state.program[(state.pc+2)%100]);
-    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-    if (parseFloat(state.input) === state.testReg && !isNaN(target))
-      state.pc = target % 100;
-    else
-      state.pc = (state.pc + 3) % 100;
-    return true;
-  }
-  // x>=t conditional
-  if (cmd === 'x>=t') {
-    let d1 = parseInt(state.program[(state.pc+1)%100]);
-    let d2 = parseInt(state.program[(state.pc+2)%100]);
-    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-    let cmp = state.isInv ? (parseFloat(state.input) < state.testReg) : (parseFloat(state.input) >= state.testReg);
-    state.isInv = false;
-    if (cmp && !isNaN(target)) state.pc = target % 100;
-    else state.pc = (state.pc + 3) % 100;
-    updateIndicators();
-    return true;
-  }
-  // dsz: decrement R0, jump to NN if > 0, else skip NN
-  if (cmd === 'dsz') {
-    state.registers[0]--;
-    let d1 = parseInt(state.program[(state.pc+1)%100]);
-    let d2 = parseInt(state.program[(state.pc+2)%100]);
-    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-    if (state.registers[0] > 0 && !isNaN(target))
-      state.pc = target % 100;
-    else
-      state.pc = (state.pc + 3) % 100;
-    return true;
-  }
-  // CMs in program
-  if (cmd === 'CMs') { press(cmd); state.pc = (state.pc + 1) % 100; return true; }
-  // Register ops with arguments (consume next step as arg)
-  if (['STO','RCL','SUM','exc','prod','fix'].includes(cmd)) {
-    press(cmd);
-    let arg = state.program[(state.pc + 1) % 100];
-    press(arg);
-    state.pc = (state.pc + 2) % 100;
-    return true;
-  }
-  // subr: subroutine call with 2-digit address
-  if (cmd === 'subr') {
-    let d1 = parseInt(state.program[(state.pc+1)%100]);
-    let d2 = parseInt(state.program[(state.pc+2)%100]);
-    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-    if (!isNaN(target)) {
-      state.returnStack.push((state.pc + 3) % 100);
-      state.pc = target % 100;
-    } else {
-      state.pc = (state.pc + 3) % 100;
-    }
-    return true;
-  }
-  // rtn: return from subroutine
-  if (cmd === 'rtn') {
-    state.pc = state.returnStack.length > 0 ? state.returnStack.pop() : (state.pc + 1) % 100;
-    return true;
-  }
-  // GTO with 2-digit address
-  if (cmd === 'GTO') {
-    let d1 = parseInt(state.program[(state.pc+1)%100]);
-    let d2 = parseInt(state.program[(state.pc+2)%100]);
-    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
-    state.pc = isNaN(target) ? (state.pc + 3) % 100 : target % 100;
-    return true;
-  }
-  // RST: reset PC to 0
-  if (cmd === 'RST') {
-    state.returnStack = []; state.pc = 0; return true;
-  }
+function getLib(){try{return JSON.parse(localStorage.getItem(STORAGE))||[]}catch(e){return[]}}
+function saveLib(l){localStorage.setItem(STORAGE,JSON.stringify(l))}
+function showSaveModal(){$('saveName').value='';$('saveModal').style.display='flex'}
+function closeSave(){$('saveModal').style.display='none'}
+function doSave(){let n=$('saveName').value.trim();if(!n){toast('Enter a program name');return}let l=getLib();l.push({id:Date.now(),name:n,program_data:S.prog,registers:S.regs,created_at:new Date().toISOString()});saveLib(l);toast('Program saved!');closeSave()}
+function showLoadModal(){$('loadModal').style.display='flex';let p=getLib();if(!p.length)$('saveList').innerHTML='<div style="text-align:center;padding:20px;color:#888">No saved programs</div>';else{let h='';for(let x of p)h+=`<div class="save-item" onclick="loadProg(${x.id})"><span class="save-name">${esc(x.name)}</span><span class="save-date">${x.created_at?x.created_at.substring(0,10):''}</span><button class="save-del" onclick="event.stopPropagation();exportProg(${x.id})" title="Download">⬇</button><button class="save-del" onclick="event.stopPropagation();delProg(${x.id})">✕</button></div>`;$('saveList').innerHTML=h}}
+function closeLoad(){$('loadModal').style.display='none'}
+function loadProg(id){let p=getLib().find(x=>x.id===id);if(!p){toast('Not found');return}S.prog=p.program_data;if(p.registers&&Array.isArray(p.registers))S.regs=p.registers;S.pc=0;S.returnStack=[];stopRun();renderProg();updDisp(S.input);closeLoad();toast('Loaded: '+p.name)}
+function delProg(id){if(!confirm('Delete?'))return;saveLib(getLib().filter(x=>x.id!==id));showLoadModal();toast('Deleted')}
+function exportProg(id){let p=getLib().find(x=>x.id===id);if(!p)return;let b=new Blob([JSON.stringify(p,null,2)],{type:'application/json'}),a=document.createElement('a');a.download=p.name.replace(/[^a-zA-Z0-9_-]/g,'_')+'.json';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);toast('Exported '+p.name)}
+function importProg(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=function(){try{let d=JSON.parse(r.result);if(!d.name||!d.program_data||!Array.isArray(d.program_data)){toast('Invalid file');return}let l=getLib();l.push({id:Date.now(),name:d.name,program_data:d.program_data,registers:d.registers||[],created_at:new Date().toISOString()});saveLib(l);showLoadModal();toast('Imported: '+d.name)}catch(ex){toast('Invalid format')}e.target.value=''};r.readAsText(f)}
+function esc(s){let d=document.createElement('div');d.textContent=s;return d.innerHTML}
 
-  // Generic: press the command key
-  press(cmd);
-  state.pc = (state.pc + 1) % 100;
-  return true;
+function loadDemo(){
+  stopRun();S.prog=Array(100).fill(NOP);
+  let demo=['xt','RCL','4','x=t','2','6','subr','4','0','int','SUM','2','RCL','2','subr','5','9','xt','RCL','7','x>=t','0','6','GTO','7','4','subr','4','0','int','SUM','1','RCL','1','subr','5','9','=','R/S','RST','pi','+','RCL','0','=','yx','8','-','int','=','STO','0','*','1','1','+','1','=','rtn','xt','RCL','6','x>=t','9','7','xt','pause','pause','RCL','5','R/S','GTO','8','6','xt','*','.','0','1','fix','2','+','RCL','1','=','R/S','0','STO','1','STO','2','fix','0','RCL','4','R/S','RST','xt','pause','rtn'];
+  for(let i=0;i<demo.length;i++)S.prog[i]=demo[i];
+  S.regs[4]=8055;S.regs[5]=800800;S.regs[6]=21;S.regs[7]=16;S.pc=0;S.input='0';S.newInput=true;renderProg();updDisp(S.input);
+  toast('BlackJack77 loaded! GTO 86 R/S to run.')
 }
 
-function startRunning() {
-  state.running = true;
-  document.getElementById('btnRun').textContent = '⏹ Stop';
-  document.getElementById('btnRun').className = 'stop-btn';
-  state.runTimeout = setTimeout(runLoop, 20);
+function toast(m){let t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2000)}
+
+window.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;if(e.key>='0'&&e.key<='9')press(e.key);if(e.key==='.')press('.');if(e.key==='+')press('+');if(e.key==='-')press('-');if(e.key==='*')press('*');if(e.key==='/')press('/');if(e.key==='Enter'||e.key==='=')press('=');if(e.key==='Escape')press('CLR');if(e.key==='Backspace')press('CE')});
+
+function K(sub,disp,pressKey,cls,subCls){return[sub,disp,pressKey||disp,cls,subCls||'']}
+let grids=[
+  [$('kgTop'),[
+    K('','2nd',0,'o'),K('','INV',0,'g'),K('log','lnx',0,'g'),K('10ᵡ','eᵡ','ex','g'),K('','CLR',0,'o'),
+    K('f(n)','LRN',0,'g'),K('dsz','GTO',0,'g'),K('|x|','sin',0,'g'),K('int','cos',0,'g'),K('1/x','tan',0,'g'),
+    K('bst','SST',0,'g'),K('x=t','x:t','xt','g'),K('CMs','STO',0,'g'),K('exc','RCL',0,'g'),K('prod','SUM',0,'g'),
+    K('nop','R/S',0,'g'),K('x≥t','RST',0,'g'),K('√x','x²','x2','g'),K('fix','EE',0,'g'),K('x√y','yᵡ','yx','g')
+  ]],
+  [$('kgBot'),[
+    K('cp','CE',0,'o'),K('subr','(',0,'g'),K('rtn',')',0,'g'),K('pause','/',0,'o'),
+    K('','7',0,'w'),K('','8',0,'w'),K('','9',0,'w'),K('π','X','*','o'),
+    K('Σ+','4',0,'w','blue'),K('Σ-','5',0,'w','blue'),K('','6',0,'w'),K('rad','-',0,'o'),
+    K('mean','1',0,'w','blue'),K('p→r','2',0,'w','blue'),K('r→p','3',0,'w','blue'),K('','+',0,'o'),
+    K('s.dev','0',0,'w','blue'),K('prt','.',0,'w','blue'),K('pap','+/-',0,'w','blue'),K('list','=',0,'o')
+  ]]
+];
+for(let[el,keys]of grids){
+  el.innerHTML=keys.map(k=>{let c=k[3]==='o'?'orange':k[3]==='w'?'white':'gray';return`<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${c}" data-key="${k[2]}">${k[1]}</button></div>`}).join('');
+  el.addEventListener('click',e=>{let b=e.target.closest('button');if(b&&b.dataset.key)press(b.dataset.key)})
 }
 
-function stopRunning() {
-  state.running = false;
-  if (state.runTimeout) clearTimeout(state.runTimeout);
-  state.runTimeout = null;
-  document.getElementById('btnRun').textContent = '▶ Run';
-  document.getElementById('btnRun').className = 'run-btn';
-}
-
-function toggleRun() {
-  if (state.running) stopRunning(); else startRunning();
-}
-
-function runLoop() {
-  if (!state.running) return;
-  if (executeSingleStep() && state.running) {
-    state.runTimeout = setTimeout(runLoop, state.runDelay);
-  } else {
-    stopRunning();
-    renderProgramList();
-  }
-}
-
-// ──────────────────────────────────────────────
-// Program Memory UI
-// ──────────────────────────────────────────────
-const progList = document.getElementById('progList');
-const progPc = document.getElementById('progPc');
-
-function renderProgramList() {
-  progPc.textContent = 'PC: ' + String(state.pc).padStart(2, '0');
-  let html = '';
-  for (let i = 0; i < 100; i++) {
-    let cls = 'prog-step';
-    if (i === state.pc) cls += ' current';
-    if (state.program[i] !== 'Nop') cls += ' filled';
-    let cmd = state.program[i];
-    let cmdCls = cmd === 'Nop' ? 'step-cmd nop' : 'step-cmd';
-    html += `<div class="${cls}" data-step="${i}" onclick="editStep(${i})">
-      <span class="step-num">${String(i).padStart(2,'0')}</span>
-      <span class="${cmdCls}">${cmd}</span>
-    </div>`;
-  }
-  progList.innerHTML = html;
-  // Center current step in the prog-list
-  let el = progList.querySelector(`[data-step="${state.pc}"]`);
-  if (el) {
-    let listRect = progList.getBoundingClientRect();
-    let elRect = el.getBoundingClientRect();
-    let elTop = elRect.top - listRect.top + progList.scrollTop;
-    progList.scrollTop = elTop - listRect.height / 2 + elRect.height / 2;
-  }
-}
-
-function stepForward() {
-  stopRunning();
-  executeSingleStep();
-  renderProgramList();
-}
-
-function stepBack() {
-  stopRunning();
-  state.pc = (state.pc - 1 + 100) % 100;
-  renderProgramList();
-}
-
-function resetPc() {
-  stopRunning();
-  state.pc = 0;
-  renderProgramList();
-}
-
-function clearProgram() {
-  if (confirm('Clear entire program memory?')) {
-    stopRunning();
-    state.program = Array(100).fill('Nop');
-    state.pc = 0;
-    state.returnStack = [];
-    renderProgramList();
-  }
-}
-
-// ──────────────────────────────────────────────
-// Edit Step Modal
-// ──────────────────────────────────────────────
-let editStepIndex = -1;
-
-function editStep(idx) {
-  stopRunning();
-  editStepIndex = idx;
-  document.getElementById('editTitle').textContent = 'Edit Step ' + String(idx).padStart(2, '0');
-  let sel = document.getElementById('editCmd');
-  sel.innerHTML = buildCmdOptions();
-  sel.value = state.program[idx];
-
-  let argRow = document.getElementById('editArgRow');
-  let isArgCmd = CMDS_WITH_ARG.includes(state.program[idx]);
-  argRow.style.display = isArgCmd ? 'flex' : 'none';
-
-  // If the cmd takes an arg and next step is a number, show it as the arg
-  if (isArgCmd) {
-    let nextVal = state.program[(idx + 1) % 100];
-    document.getElementById('editArg').value = (!isNaN(nextVal) && nextVal !== 'Nop') ? nextVal : '';
-  } else {
-    document.getElementById('editArg').value = '';
-  }
-
-  document.getElementById('btnClearStep').style.display = state.program[idx] !== 'Nop' ? '' : 'none';
-  document.getElementById('editModal').style.display = 'flex';
-}
-
-function closeEditModal() {
-  document.getElementById('editModal').style.display = 'none';
-  editStepIndex = -1;
-}
-
-function clearStep() {
-  if (editStepIndex >= 0) {
-    state.program[editStepIndex] = 'Nop';
-    renderProgramList();
-    closeEditModal();
-  }
-}
-
-function saveStep() {
-  if (editStepIndex < 0) return;
-  let cmd = document.getElementById('editCmd').value;
-  state.program[editStepIndex] = cmd;
-
-  // If this command needs an argument, store it in the next step
-  if (CMDS_WITH_ARG.includes(cmd)) {
-    let arg = parseInt(document.getElementById('editArg').value);
-    if (!isNaN(arg) && arg >= 0 && arg <= 99) {
-      state.program[(editStepIndex + 1) % 100] = String(arg);
-    }
-  }
-  renderProgramList();
-  closeEditModal();
-}
-
-// Handle cmd dropdown change to show/hide arg field
-document.getElementById('editCmd').addEventListener('change', function() {
-  let cmd = this.value;
-  let argRow = document.getElementById('editArgRow');
-  let needsArg = CMDS_WITH_ARG.includes(cmd);
-  argRow.style.display = needsArg ? 'flex' : 'none';
-  if (!needsArg) document.getElementById('editArg').value = '';
-});
-
-// ──────────────────────────────────────────────
-// Save / Load (localStorage)
-// ──────────────────────────────────────────────
-const STORAGE_KEY = 'sr56_programs';
-
-function getLibrary() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch(e) { return []; }
-}
-
-function saveLibrary(lib) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lib));
-}
-
-function showSaveModal() {
-  document.getElementById('saveName').value = '';
-  document.getElementById('saveModal').style.display = 'flex';
-}
-
-function closeSaveModal() {
-  document.getElementById('saveModal').style.display = 'none';
-}
-
-function doSave() {
-  let name = document.getElementById('saveName').value.trim();
-  if (!name) { toast('Enter a program name'); return; }
-  let lib = getLibrary();
-  let id = Date.now();
-  lib.push({
-    id: id,
-    name: name,
-    program_data: state.program,
-    registers: state.registers,
-    created_at: new Date().toISOString()
-  });
-  saveLibrary(lib);
-  toast('Program saved!');
-  closeSaveModal();
-}
-
-function showLoadModal() {
-  document.getElementById('loadModal').style.display = 'flex';
-  let programs = getLibrary();
-  if (programs.length === 0) {
-    document.getElementById('saveList').innerHTML = '<div style="text-align:center;padding:20px;color:#888">No saved programs</div>';
-  } else {
-    let html = '';
-    for (let p of programs) {
-      html += `<div class="save-item" onclick="loadProgram(${p.id})">
-        <span class="save-name">${escapeHtml(p.name)}</span>
-        <span class="save-date">${p.created_at ? p.created_at.substring(0,10) : ''}</span>
-        <button class="save-del" onclick="event.stopPropagation();exportProgram(${p.id})" title="Download">⬇</button>
-        <button class="save-del" onclick="event.stopPropagation();deleteProgram(${p.id})">✕</button>
-      </div>`;
-    }
-    document.getElementById('saveList').innerHTML = html;
-  }
-}
-
-function closeLoadModal() {
-  document.getElementById('loadModal').style.display = 'none';
-}
-
-function loadProgram(id) {
-  let lib = getLibrary();
-  let p = lib.find(x => x.id === id);
-  if (!p) { toast('Program not found'); return; }
-  state.program = p.program_data;
-  if (p.registers && Array.isArray(p.registers)) state.registers = p.registers;
-  state.pc = 0;
-  state.returnStack = [];
-  stopRunning();
-  renderProgramList();
-  updateDisplay(state.input);
-  closeLoadModal();
-  toast('Program loaded: ' + p.name);
-}
-
-function deleteProgram(id) {
-  if (!confirm('Delete this program?')) return;
-  let lib = getLibrary().filter(x => x.id !== id);
-  saveLibrary(lib);
-  showLoadModal();
-  toast('Program deleted');
-}
-
-function exportProgram(id) {
-  let lib = getLibrary();
-  let p = lib.find(x => x.id === id);
-  if (!p) { toast('Program not found'); return; }
-  let blob = new Blob([JSON.stringify(p, null, 2)], {type: 'application/json'});
-  let a = document.createElement('a');
-  a.download = p.name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
-  a.href = URL.createObjectURL(blob);
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast('Exported ' + p.name);
-}
-
-function importProgram(event) {
-  let file = event.target.files[0];
-  if (!file) return;
-  let reader = new FileReader();
-  reader.onload = function() {
-    try {
-      let data = JSON.parse(reader.result);
-      if (!data.name || !data.program_data || !Array.isArray(data.program_data)) {
-        toast('Invalid program file'); return;
-      }
-      let lib = getLibrary();
-      lib.push({
-        id: Date.now(),
-        name: data.name,
-        program_data: data.program_data,
-        registers: data.registers || [],
-        created_at: new Date().toISOString()
-      });
-      saveLibrary(lib);
-      showLoadModal();
-      toast('Imported: ' + data.name);
-    } catch(e) {
-      toast('Invalid file format');
-    }
-    event.target.value = '';
-  };
-  reader.readAsText(file);
-}
-
-function escapeHtml(s) {
-  let d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
-// ──────────────────────────────────────────────
-// Demo: BlackJack77
-// ──────────────────────────────────────────────
-function loadDemoBlackJack() {
-  stopRunning();
-  state.program = Array(100).fill('Nop');
-  let demo = [
-    'xt','RCL','4','x=t','2','6','subr','4','0','int','SUM','2','RCL','2',
-    'subr','5','9','xt','RCL','7','x>=t','0','6','GTO','7','4','subr','4',
-    '0','int','SUM','1','RCL','1','subr','5','9','=','R/S','RST','pi','+',
-    'RCL','0','=','yx','8','-','int','=','STO','0','*','1','1','+','1','=',
-    'rtn','xt','RCL','6','x>=t','9','7','xt','pause','pause','RCL','5','R/S',
-    'GTO','8','6','xt','*','.','0','1','fix','2','+','RCL','1','=','R/S','0',
-    'STO','1','STO','2','fix','0','RCL','4','R/S','RST','xt','pause','rtn'
-  ];
-  for (let i = 0; i < demo.length; i++) state.program[i] = demo[i];
-  state.registers[4] = 8055;
-  state.registers[5] = 800800;
-  state.registers[6] = 21;
-  state.registers[7] = 16;
-  state.pc = 0;
-  state.input = '0';
-  state.newInput = true;
-  renderProgramList();
-  updateDisplay(state.input);
-  toast('BlackJack77 loaded! GTO 86 R/S to run.');
-}
-
-// ──────────────────────────────────────────────
-// Screen Navigation
-// ──────────────────────────────────────────────
-// Scroll to program section
-function scrollToProg() {
-  document.querySelector('.prog-section').scrollIntoView({ behavior: 'smooth' });
-}
-
-// Close modals on overlay click
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) closeEditModal();
-});
-document.getElementById('saveModal').addEventListener('click', function(e) {
-  if (e.target === this) closeSaveModal();
-});
-document.getElementById('loadModal').addEventListener('click', function(e) {
-  if (e.target === this) closeLoadModal();
-});
-
-// Toast
-function toast(msg) {
-  let t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._timeout);
-  t._timeout = setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-// ──────────────────────────────────────────────
-// Keyboard Support
-// ──────────────────────────────────────────────
-window.addEventListener('keydown', (e) => {
-  // Don't intercept when typing in inputs
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (e.key >= '0' && e.key <= '9') press(e.key);
-  if (e.key === '.') press('.');
-  if (e.key === '+') press('+');
-  if (e.key === '-') press('-');
-  if (e.key === '*') press('*');
-  if (e.key === '/') press('/');
-  if (e.key === 'Enter' || e.key === '=') press('=');
-  if (e.key === 'Escape') press('CLR');
-  if (e.key === 'Backspace') press('CE');
-});
-
-// ──────────────────────────────────────────────
-// Build Keyboard
-// ──────────────────────────────────────────────
-// Key format: [subLabel, displayText, pressKey, colorClass]
-// pressKey defaults to displayText if omitted
-function K(sub, disp, press, cls, subCls) { return [sub, disp, press || disp, cls, subCls || '']; }
-
-function buildKeyboard() {
-  // Top grid (5 columns, 4 rows)
-  let topKeys = [
-    K('','2nd',null,'o'),  K('','INV',null,'g'),  K('log','lnx',null,'g'), K('10ᵡ','eᵡ','ex','g'), K('','CLR',null,'o'),
-    K('f(n)','LRN',null,'g'),K('dsz','GTO',null,'g'),K('|x|','sin',null,'g'),K('int','cos',null,'g'),     K('1/x','tan',null,'g'),
-    K('bst','SST',null,'g'),K('x=t','x:t','xt','g'),K('CMs','STO',null,'g'),K('exc','RCL',null,'g'),       K('prod','SUM',null,'g'),
-    K('nop','R/S',null,'g'),K('x≥t','RST',null,'g'),K('√x','x²','x2','g'),K('fix','EE',null,'g'),K('x√y','yᵡ','yx','g')
-  ];
-  let html = '';
-  for (let k of topKeys) {
-    let cls = k[3] === 'o' ? 'orange' : (k[3] === 'w' ? 'white' : 'gray');
-    html += `<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${cls}" data-key="${k[2]}">${k[1]}</button></div>`;
-  }
-  document.getElementById('keyGridTop').innerHTML = html;
-
-  // Bottom grid (4 columns, 5 rows)
-  let bottomKeys = [
-    K('cp','CE',null,'o'),     K('subr','(',null,'g'),     K('rtn',')',null,'g'),      K('pause','/',null,'o'),
-    K('','7',null,'w'),        K('','8',null,'w'),         K('','9',null,'w'),         K('π','X','*','o'),
-    K('Σ+','4',null,'w','blue'),K('Σ-','5',null,'w','blue'),K('','6',null,'w'),        K('rad','-',null,'o'),
-    K('mean','1',null,'w','blue'),K('p→r','2',null,'w','blue'),K('r→p','3',null,'w','blue'),K('','+',null,'o'),
-    K('s.dev','0',null,'w','blue'),K('prt','.',null,'w','blue'),K('pap','+/-',null,'w','blue'),K('list','=',null,'o')
-  ];
-  html = '';
-  for (let k of bottomKeys) {
-    let cls = k[3] === 'o' ? 'orange' : (k[3] === 'w' ? 'white' : 'gray');
-    html += `<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${cls}" data-key="${k[2]}">${k[1]}</button></div>`;
-  }
-  document.getElementById('keyGridBottom').innerHTML = html;
-}
-
-// Delegate key clicks
-document.getElementById('keyGridTop').addEventListener('click', (e) => {
-  let btn = e.target.closest('button');
-  if (btn && btn.dataset.key) press(btn.dataset.key);
-});
-document.getElementById('keyGridBottom').addEventListener('click', (e) => {
-  let btn = e.target.closest('button');
-  if (btn && btn.dataset.key) press(btn.dataset.key);
-});
-
-// ──────────────────────────────────────────────
-// Init
-// ──────────────────────────────────────────────
-buildKeyboard();
-renderProgramList();
-updateDisplay('0');
-updateIndicators();
-// Load BlackJack demo by default
-loadDemoBlackJack();
+renderProg();updDisp('0');updInd();loadDemo();
 </script>
 
 
