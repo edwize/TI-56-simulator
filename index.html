@@ -1,613 +1,1492 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TI SR-56 Simulator - Eddie Wizelman 2026</title>
-    <style>
-        :root { 
-            --bg-color: #111112; --calc-bg: #232326; --panel-bg: #141415; 
-            --led-bg: #090000; --led-red: #ff1a1a; --key-gray: #4d4d50; 
-            --key-white: #ededed; --key-orange: #d96316; --text-gold: #cca434; 
-        }
-        @font-face {
-            font-family: 'SevenSegmentVintage';
-            src: url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format('woff2'),
-                 url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format('woff');
-            font-weight: normal; font-style: normal;
-        }
-        body { 
-            background-color: var(--bg-color); font-family: 'Segoe UI', Arial, sans-serif; 
-            display: flex; justify-content: center; align-items: flex-start; 
-            gap: 25px; padding: 25px; color: #eee; user-select: none; 
-        }
-        .calculator { 
-            background-color: var(--calc-bg); width: 375px; padding: 22px; 
-            border-radius: 14px; border: 3px solid #38383c; box-shadow: 0 20px 45px rgba(0,0,0,0.8); 
-        }
-        .brand { text-align: center; font-style: italic; font-weight: bold; font-size: 16px; color: #b5b5b5; letter-spacing: 2px; margin-bottom: 2px; }
-        .model { text-align: center; font-size: 12px; letter-spacing: 6px; color: var(--key-orange); margin-bottom: 16px; font-weight: bold; }
-        .display-box { background-color: var(--led-bg); padding: 12px 16px; border-radius: 6px; border: 3px solid #080809; margin-bottom: 20px; }
-        .status-indicators { display: flex; gap: 20px; font-size: 11px; font-weight: bold; color: #250202; margin-bottom: 4px; font-family: monospace; }
-        .status-indicators .active { color: var(--led-red); text-shadow: 0 0 6px var(--led-red); }
-        .led-text { 
-            font-family: 'SevenSegmentVintage', 'Courier New', monospace; font-size: 30px; font-weight: bold; 
-            color: var(--led-red); text-align: right; height: 38px; line-height: 38px; white-space: pre; 
-            text-shadow: 0 0 8px rgba(255,26,26,0.6); letter-spacing: 4px;
-        }
-        .panel-container { background-color: var(--panel-bg); padding: 14px 10px; border-radius: 8px; display: flex; flex-direction: column; gap: 14px; }
-        .top-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 6px; }
-        .bottom-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 8px; padding-top: 5px; border-top: 2px solid #222; }
-        .key-cell { display: flex; flex-direction: column; align-items: center; }
-        .top-label { font-size: 8.5px; color: var(--text-gold); font-weight: bold; height: 12px; margin-bottom: 3px; text-transform: uppercase; text-align: center; white-space: nowrap; width: 100%; overflow: hidden; }
-        button { width: 100%; height: 34px; border: none; border-radius: 4px; font-size: 10.5px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #000; transition: transform 0.05s; }
-        button:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
-        .g-btn { background-color: var(--key-gray); color: #fff; }
-        .w-btn { background-color: var(--key-white); color: #111; font-size: 14px; }
-        .o-btn { background-color: var(--key-orange); color: #000; }
-        .side-panel { background-color: #141415; width: 260px; height: 640px; border-radius: 8px; padding: 16px; border: 1px solid #333; display: flex; flex-direction: column; }
-        /* Responsive: on portrait / small screens stack memory below calculator
-           and animate the memory panel while keeping the calculator visible/static. */
-        @media (max-width: 700px), (orientation: portrait) {
-            body { flex-direction: column; align-items: center; padding: 12px; gap: 12px; }
-            .calculator { width: 100%; max-width: 420px; box-sizing: border-box; position: sticky; top: 12px; z-index: 20; }
-            .panel-container { width: 100%; max-width: 420px; }
-            .side-panel { width: 100%; max-width: 420px; height: 260px; border-radius: 8px; padding: 10px; overflow: hidden; position: relative; z-index: 10; }
-            .steps-box { height: calc(100% - 72px); overflow-y: auto; }
-            /* animation when showing memory panel */
-            .side-panel.mobile-enter { animation: sr56SlideUp 360ms ease; }
-            .side-panel.mobile-exit { animation: sr56SlideDown 280ms ease; }
-            @keyframes sr56SlideUp { from { transform: translateY(18px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-            @keyframes sr56SlideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(18px); opacity: 0; } }
-        }
-        .steps-box { flex-grow: 1; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 13px; margin-bottom: 10px; }
-        .step-item { padding: 4px 6px; display: flex; justify-content: space-between; color: #555; transition: background-color 0.1s; }
-        .step-item.active { background-color: #380d0d; color: var(--led-red); font-weight: bold; }
-        .step-item.filled { color: #ccc; }
-        .file-controls { display: flex; gap: 8px; }
-        .io-btn { background-color: #3a3a3d; color: #fff; border: 1px solid #555; padding: 6px; border-radius: 4px; cursor: pointer; flex: 1; font-size: 11px; text-align: center; font-weight: bold; }
-        .io-btn:hover { background-color: #4f4f54; }
-    </style>
+<!-- saved from url=(0036)https://ti-sr56-mobile.clodhost.com/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TI SR-56</title>
+<style>
+:root {
+  --bg: #000;
+  --calc-bg: #1c1c1e;
+  --display-bg: #0a0000;
+  --led: #ff2d2d;
+  --key-gray: #48484d;
+  --key-light: #8e8e93;
+  --key-white: #e5e5ea;
+  --key-orange: #ff9f0a;
+  --gold: #d4a843; --blue: #5a9cf0;
+  --tab-bg: #1c1c1e;
+  --panel-bg: #1c1c1e;
+  --text: #fff;
+  --text-secondary: #8e8e93;
+  --border: #38383c;
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+  --safe-top: env(safe-area-inset-top, 20px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  width: 100%; min-height: 100%;
+  background: #000; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  color: var(--text); user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+@font-face {
+  font-family: 'SevenSegment';
+  src: url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff2") format('woff2'),
+       url("https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Regular.woff") format('woff');
+  font-weight: normal; font-style: normal;
+}
+
+/* App Shell */
+.app {
+  width: 100%; max-width: 500px; margin: 0 auto;
+  padding: var(--safe-top) 0 0;
+}
+
+/* Calculator Section */
+.calc-section {
+  padding: 8px 12px 0;
+}
+.brand-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0 4px; margin-bottom: 2px;
+}
+.brand { font-style: italic; font-weight: 700; font-size: 15px; color: #b5b5b5; letter-spacing: 2px; }
+.model { font-size: 11px; letter-spacing: 5px; color: var(--key-orange); font-weight: 700; }
+
+.display-box {
+  background: var(--display-bg); padding: 14px 16px; border-radius: 10px;
+  border: 3px solid #1a1a1d; margin-bottom: 12px;
+}
+.indicators {
+  display: flex; gap: 20px; font-size: 10px; font-weight: 700;
+  color: #2a0000; margin-bottom: 4px; font-family: monospace; letter-spacing: 1px;
+}
+.indicators span.active { color: var(--led); text-shadow: 0 0 8px var(--led); }
+.display {
+  font-family: 'SevenSegment', 'Courier New', monospace; font-size: 32px;
+  font-weight: 700; color: var(--led); text-align: right; height: 42px;
+  line-height: 42px; white-space: pre; text-shadow: 0 0 10px rgba(255,45,45,0.6);
+  letter-spacing: 3px; overflow: hidden;
+}
+
+.key-panel {
+  background: var(--panel-bg); border-radius: 12px; padding: 14px 10px 10px;
+}
+.key-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; }
+.key-grid.bottom { grid-template-columns: repeat(4, 1fr); border-top: 2px solid #2c2c2e; padding-top: 10px; margin-top: 10px; }
+.key-wrap { display: flex; flex-direction: column; align-items: center; }
+.key-sub {
+  font-size: 7.5px; color: var(--gold); font-weight: 700; height: 11px;
+  margin-bottom: 2px; text-transform: uppercase; text-align: center;
+  white-space: nowrap; width: 100%; overflow: hidden;
+  letter-spacing: 0.3px; line-height: 11px;
+}
+.key-sub.blue { color: var(--blue); }
+.key-btn {
+  width: 100%; height: 38px; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: transform 0.05s, opacity 0.05s;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; letter-spacing: 0.5px;
+}
+.key-btn:active { transform: scale(0.93); opacity: 0.85; }
+.key-btn.gray  { background: #48484d; color: #fff; }
+.key-btn.white { background: #e5e5ea; color: #000; font-size: 16px; font-weight: 600; }
+.key-btn.orange { background: var(--key-orange); color: #000; font-size: 15px; }
+
+/* Program Memory Section */
+.prog-section {
+  margin: 0 12px 24px;
+  background: #141415; border-radius: 12px;
+  overflow: hidden;
+}
+.prog-section-handle {
+  display: flex; justify-content: center; padding: 8px 0 4px;
+  cursor: pointer;
+}
+.prog-section-handle::after {
+  content: ''; width: 36px; height: 5px;
+  background: #555; border-radius: 3px;
+}
+.prog-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 12px 6px;
+}
+.prog-title { font-size: 14px; font-weight: 700; }
+.prog-pc { font-size: 12px; color: var(--gold); font-weight: 600; }
+.prog-toolbar {
+  display: flex; gap: 4px; padding: 0 10px 6px; flex-wrap: wrap;
+}
+.prog-toolbar button {
+  flex: 1; min-width: 44px; padding: 6px 4px; border-radius: 6px;
+  border: none; font-size: 10px; font-weight: 600; cursor: pointer;
+  background: #2c2c2e; color: #fff; transition: 0.1s;
+}
+.prog-toolbar button:active { background: #48484d; }
+.prog-toolbar button.run-btn { background: #34c759; color: #000; }
+.prog-toolbar button.stop-btn { background: #ff3b30; color: #fff; }
+.prog-toolbar button.warn-btn { background: #ff9f0a; color: #000; }
+
+.prog-list {
+  max-height: 220px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
+  font-size: 12px; background: #111;
+  margin: 0 10px 8px; border-radius: 8px;
+}
+.prog-list::-webkit-scrollbar { width: 6px; }
+.prog-list::-webkit-scrollbar-track { background: #1a1a1d; border-radius: 3px; }
+.prog-list::-webkit-scrollbar-thumb { background: #48484d; border-radius: 3px; }
+.prog-list::-webkit-scrollbar-thumb:active { background: #6a6a6f; }
+
+.prog-step {
+  display: flex; align-items: center; padding: 6px 8px;
+  border-bottom: 1px solid #1c1c1e; transition: background 0.1s;
+  cursor: pointer;
+}
+.prog-step:active { background: #2a2a2e; }
+.prog-step.current { background: #3d1010; }
+.prog-step.current .step-num { color: var(--led); }
+.prog-step.current .step-cmd { color: var(--led); }
+.step-num {
+  font-size: 10px; color: #555; width: 32px; flex-shrink: 0;
+  font-weight: 600;
+}
+.step-cmd {
+  color: var(--text-secondary); font-weight: 500;
+  flex: 1; font-size: 11px;
+}
+.step-cmd.nop { color: #444; }
+.prog-step.filled .step-cmd { color: #ccc; }
+.prog-step.filled.current .step-cmd { color: var(--led); }
+
+.speed-indicator {
+  text-align: center; font-size: 10px; color: var(--text-secondary);
+  padding: 0 0 8px; font-weight: 500;
+}
+
+/* Edit Modal */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.75); z-index: 100;
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-sheet {
+  background: #1c1c1e; border-radius: 16px 16px 0 0; width: 100%;
+  max-width: 500px; padding: 16px; animation: slideUp 0.25s ease-out;
+  padding-bottom: calc(16px + var(--safe-bottom));
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+  width: 36px; height: 5px; background: #555; border-radius: 3px;
+  margin: 0 auto 14px;
+}
+.modal-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+.modal-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.modal-input-row select {
+  flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444;
+  background: #2c2c2e; color: #fff; font-size: 15px; appearance: none;
+  text-align: center; font-weight: 600;
+}
+.modal-input-row input {
+  flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #444;
+  background: #2c2c2e; color: #fff; font-size: 15px; text-align: center;
+}
+.modal-buttons { display: flex; gap: 8px; }
+.modal-buttons button {
+  flex: 1; padding: 14px; border-radius: 10px; border: none;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.btn-cancel { background: #2c2c2e; color: #fff; }
+.btn-save { background: var(--key-orange); color: #000; }
+.btn-delete { background: #ff3b30; color: #fff; }
+
+/* Save/Load Modal */
+.save-list { max-height: 240px; overflow-y: auto; margin-bottom: 10px; }
+.save-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px; border-radius: 8px; background: #2c2c2e;
+  margin-bottom: 6px; cursor: pointer;
+}
+.save-item:active { background: #3a3a3d; }
+.save-item .save-name { font-weight: 600; font-size: 14px; flex: 1; }
+.save-item .save-date { font-size: 11px; color: var(--text-secondary); }
+.save-item .save-del {
+  background: none; border: none; color: #ff3b30; font-size: 18px;
+  padding: 4px 8px; cursor: pointer; margin-left: 8px;
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+  background: #2c2c2e; color: #fff; padding: 10px 24px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; z-index: 200; pointer-events: none;
+  opacity: 0; transition: opacity 0.3s;
+}
+.toast.show { opacity: 1; }
+
+</style>
 </head>
 <body>
-<div class="calculator">
-    <div class="brand">TEXAS INSTRUMENTS</div>
-    <div class="model">SR-56</div>
+
+<div class="app">
+  <!-- Calculator Section -->
+  <div class="calc-section">
+    <div class="brand-row">
+      <span class="brand">TEXAS INSTRUMENTS</span>
+      <span class="model">SR-56</span>
+    </div>
     <div class="display-box">
-        <div class="status-indicators"><span id="ind-2nd">2nd</span><span id="ind-inv">INV</span></div>
-        <div class="led-text" id="display">0.</div>
+      <div class="indicators">
+        <span id="ind2nd" class="">2nd</span>
+        <span id="indInv" class="">INV</span>
+        <span id="indDeg">DEG</span>
+        <span id="indRad" style="display:none">RAD</span>
+      </div>
+      <div class="display" id="display">0.</div>
     </div>
-    <div class="panel-container">
-        <!-- TOP SECTION: 5 Columns x 4 Rows -->
-        <div class="top-grid">
-            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('2nd')">2nd</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="g-btn" onclick="press('INV')">INV</button></div>
-            <div class="key-cell"><div class="top-label">log</div><button class="g-btn" onclick="press('lnx')">lnx</button></div>
-            <div class="key-cell"><div class="top-label">10ᵡ</div><button class="g-btn" onclick="press('ex')">eᵡ</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('CLR')">CLR</button></div>
-            <div class="key-cell"><div class="top-label">f(n)</div><button class="g-btn" onclick="press('LRN')">LRN</button></div>
-            <div class="key-cell"><div class="top-label">dsz</div><button class="g-btn" onclick="press('GTO')">GTO</button></div>
-            <div class="key-cell"><div class="top-label">|x|</div><button class="g-btn" onclick="press('sin')">sin</button></div>
-            <div class="key-cell"><div class="top-label">int</div><button class="g-btn" onclick="press('cos')">cos</button></div>
-            <div class="key-cell"><div class="top-label">1/x</div><button class="g-btn" onclick="press('tan')">tan</button></div>
-            <div class="key-cell"><div class="top-label">bst</div><button class="g-btn" onclick="press('SST')">SST</button></div>
-            <div class="key-cell"><div class="top-label">x=t</div><button class="g-btn" onclick="press('xt')">x:t</button></div>
-            <div class="key-cell"><div class="top-label">CMs</div><button class="g-btn" onclick="press('STO')">STO</button></div>
-            <div class="key-cell"><div class="top-label">exc</div><button class="g-btn" onclick="press('RCL')">RCL</button></div>
-            <div class="key-cell"><div class="top-label">prod</div><button class="g-btn" onclick="press('SUM')">SUM</button></div>
-            <div class="key-cell"><div class="top-label">nop</div><button class="g-btn" onclick="press('R/S')">R/S</button></div>
-            <div class="key-cell"><div class="top-label">x≥t</div><button class="g-btn" onclick="press('RST')">RST</button></div>
-            <div class="key-cell"><div class="top-label">√x</div><button class="g-btn" onclick="press('x2')">x²</button></div>
-            <div class="key-cell"><div class="top-label">fix</div><button class="g-btn" onclick="press('EE')">EE</button></div>
-            <div class="key-cell"><div class="top-label">x√y</div><button class="g-btn" onclick="press('yx')">yᵡ</button></div>
-        </div>
-        <!-- BOTTOM SECTION: 4 Columns x 5 Rows -->
-        <div class="bottom-grid">
-            <div class="key-cell"><div class="top-label">cp</div><button class="o-btn" onclick="press('CE')">CE</button></div>
-            <div class="key-cell"><div class="top-label">subr</div><button class="g-btn" onclick="press('(')">(</button></div>
-            <div class="key-cell"><div class="top-label">rtn</div><button class="g-btn" onclick="press(')')">)</button></div>
-            <div class="key-cell"><div class="top-label">pause</div><button class="o-btn" onclick="press('/')">/</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('7')">7</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('8')">8</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('9')">9</button></div>
-            <div class="key-cell"><div class="top-label">π</div><button class="o-btn" onclick="press('*')">X</button></div>
-            <div class="key-cell"><div class="top-label">Σ+</div><button class="w-btn" onclick="press('4')">4</button></div>
-            <div class="key-cell"><div class="top-label">Σ-</div><button class="w-btn" onclick="press('5')">5</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="w-btn" onclick="press('6')">6</button></div>
-            <div class="key-cell"><div class="top-label">rad</div><button class="o-btn" onclick="press('-')">-</button></div>
-            <div class="key-cell"><div class="top-label">mean</div><button class="w-btn" onclick="press('1')">1</button></div>
-            <div class="key-cell"><div class="top-label">p→r</div><button class="w-btn" onclick="press('2')">2</button></div>
-            <div class="key-cell"><div class="top-label">r→p</div><button class="w-btn" onclick="press('3')">3</button></div>
-            <div class="key-cell"><div class="top-label"></div><button class="o-btn" onclick="press('+')">+</button></div>
-            <div class="key-cell"><div class="top-label">s.dev</div><button class="w-btn" onclick="press('0')">0</button></div>
-            <div class="key-cell"><div class="top-label">prt</div><button class="w-btn" onclick="press('.')">.</button></div>
-            <div class="key-cell"><div class="top-label">pap</div><button class="w-btn" onclick="press('+/-')">+/-</button></div>
-            <div class="key-cell"><div class="top-label">list</div><button class="o-btn" onclick="press('=')">=</button></div>
-        </div>
+    <div class="key-panel">
+      <div class="key-grid" id="keyGridTop"><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="2nd">2nd</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn gray" data-key="INV">INV</button></div><div class="key-wrap"><div class="key-sub ">log</div><button class="key-btn gray" data-key="lnx">lnx</button></div><div class="key-wrap"><div class="key-sub ">10ᵡ</div><button class="key-btn gray" data-key="ex">eᵡ</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="CLR">CLR</button></div><div class="key-wrap"><div class="key-sub ">f(n)</div><button class="key-btn gray" data-key="LRN">LRN</button></div><div class="key-wrap"><div class="key-sub ">dsz</div><button class="key-btn gray" data-key="GTO">GTO</button></div><div class="key-wrap"><div class="key-sub ">|x|</div><button class="key-btn gray" data-key="sin">sin</button></div><div class="key-wrap"><div class="key-sub ">int</div><button class="key-btn gray" data-key="cos">cos</button></div><div class="key-wrap"><div class="key-sub ">1/x</div><button class="key-btn gray" data-key="tan">tan</button></div><div class="key-wrap"><div class="key-sub ">bst</div><button class="key-btn gray" data-key="SST">SST</button></div><div class="key-wrap"><div class="key-sub ">x=t</div><button class="key-btn gray" data-key="xt">x:t</button></div><div class="key-wrap"><div class="key-sub ">CMs</div><button class="key-btn gray" data-key="STO">STO</button></div><div class="key-wrap"><div class="key-sub ">exc</div><button class="key-btn gray" data-key="RCL">RCL</button></div><div class="key-wrap"><div class="key-sub ">prod</div><button class="key-btn gray" data-key="SUM">SUM</button></div><div class="key-wrap"><div class="key-sub ">nop</div><button class="key-btn gray" data-key="R/S">R/S</button></div><div class="key-wrap"><div class="key-sub ">x≥t</div><button class="key-btn gray" data-key="RST">RST</button></div><div class="key-wrap"><div class="key-sub ">√x</div><button class="key-btn gray" data-key="x2">x²</button></div><div class="key-wrap"><div class="key-sub ">fix</div><button class="key-btn gray" data-key="EE">EE</button></div><div class="key-wrap"><div class="key-sub ">x√y</div><button class="key-btn gray" data-key="yx">yᵡ</button></div></div>
+      <div class="key-grid bottom" id="keyGridBottom"><div class="key-wrap"><div class="key-sub ">cp</div><button class="key-btn orange" data-key="CE">CE</button></div><div class="key-wrap"><div class="key-sub ">subr</div><button class="key-btn gray" data-key="(">(</button></div><div class="key-wrap"><div class="key-sub ">rtn</div><button class="key-btn gray" data-key=")">)</button></div><div class="key-wrap"><div class="key-sub ">pause</div><button class="key-btn orange" data-key="/">/</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="7">7</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="8">8</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="9">9</button></div><div class="key-wrap"><div class="key-sub ">π</div><button class="key-btn orange" data-key="*">X</button></div><div class="key-wrap"><div class="key-sub blue">Σ+</div><button class="key-btn white" data-key="4">4</button></div><div class="key-wrap"><div class="key-sub blue">Σ-</div><button class="key-btn white" data-key="5">5</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn white" data-key="6">6</button></div><div class="key-wrap"><div class="key-sub ">rad</div><button class="key-btn orange" data-key="-">-</button></div><div class="key-wrap"><div class="key-sub blue">mean</div><button class="key-btn white" data-key="1">1</button></div><div class="key-wrap"><div class="key-sub blue">p→r</div><button class="key-btn white" data-key="2">2</button></div><div class="key-wrap"><div class="key-sub blue">r→p</div><button class="key-btn white" data-key="3">3</button></div><div class="key-wrap"><div class="key-sub "></div><button class="key-btn orange" data-key="+">+</button></div><div class="key-wrap"><div class="key-sub blue">s.dev</div><button class="key-btn white" data-key="0">0</button></div><div class="key-wrap"><div class="key-sub blue">prt</div><button class="key-btn white" data-key=".">.</button></div><div class="key-wrap"><div class="key-sub blue">pap</div><button class="key-btn white" data-key="+/-">+/-</button></div><div class="key-wrap"><div class="key-sub ">list</div><button class="key-btn orange" data-key="=">=</button></div></div>
     </div>
+  </div>
+
+  <!-- Program Memory Section -->
+  <div class="prog-section">
+    <div class="prog-section-handle" onclick="scrollToProg()"></div>
+    <div class="prog-header">
+      <span class="prog-title">Program Memory</span>
+      <span class="prog-pc" id="progPc">PC: 00</span>
+    </div>
+    <div class="prog-toolbar">
+      <button onclick="stepBack()" title="Back Step">◀ BST</button>
+      <button onclick="stepForward()" title="Single Step">SST ▶</button>
+      <button class="run-btn" id="btnRun" onclick="toggleRun()">▶ Run</button>
+      <button onclick="resetPc()" title="Reset">RST</button>
+      <button class="warn-btn" onclick="clearProgram()">CLR</button>
+    </div>
+    <div class="prog-list" id="progList"><div class="prog-step current filled" data-step="0" onclick="editStep(0)">
+      <span class="step-num">00</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="1" onclick="editStep(1)">
+      <span class="step-num">01</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="2" onclick="editStep(2)">
+      <span class="step-num">02</span>
+      <span class="step-cmd">4</span>
+    </div><div class="prog-step filled" data-step="3" onclick="editStep(3)">
+      <span class="step-num">03</span>
+      <span class="step-cmd">x=t</span>
+    </div><div class="prog-step filled" data-step="4" onclick="editStep(4)">
+      <span class="step-num">04</span>
+      <span class="step-cmd">2</span>
+    </div><div class="prog-step filled" data-step="5" onclick="editStep(5)">
+      <span class="step-num">05</span>
+      <span class="step-cmd">6</span>
+    </div><div class="prog-step filled" data-step="6" onclick="editStep(6)">
+      <span class="step-num">06</span>
+      <span class="step-cmd">subr</span>
+    </div><div class="prog-step filled" data-step="7" onclick="editStep(7)">
+      <span class="step-num">07</span>
+      <span class="step-cmd">4</span>
+    </div><div class="prog-step filled" data-step="8" onclick="editStep(8)">
+      <span class="step-num">08</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="9" onclick="editStep(9)">
+      <span class="step-num">09</span>
+      <span class="step-cmd">int</span>
+    </div><div class="prog-step filled" data-step="10" onclick="editStep(10)">
+      <span class="step-num">10</span>
+      <span class="step-cmd">SUM</span>
+    </div><div class="prog-step filled" data-step="11" onclick="editStep(11)">
+      <span class="step-num">11</span>
+      <span class="step-cmd">2</span>
+    </div><div class="prog-step filled" data-step="12" onclick="editStep(12)">
+      <span class="step-num">12</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="13" onclick="editStep(13)">
+      <span class="step-num">13</span>
+      <span class="step-cmd">2</span>
+    </div><div class="prog-step filled" data-step="14" onclick="editStep(14)">
+      <span class="step-num">14</span>
+      <span class="step-cmd">subr</span>
+    </div><div class="prog-step filled" data-step="15" onclick="editStep(15)">
+      <span class="step-num">15</span>
+      <span class="step-cmd">5</span>
+    </div><div class="prog-step filled" data-step="16" onclick="editStep(16)">
+      <span class="step-num">16</span>
+      <span class="step-cmd">9</span>
+    </div><div class="prog-step filled" data-step="17" onclick="editStep(17)">
+      <span class="step-num">17</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="18" onclick="editStep(18)">
+      <span class="step-num">18</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="19" onclick="editStep(19)">
+      <span class="step-num">19</span>
+      <span class="step-cmd">7</span>
+    </div><div class="prog-step filled" data-step="20" onclick="editStep(20)">
+      <span class="step-num">20</span>
+      <span class="step-cmd">x&gt;=t</span>
+    </div><div class="prog-step filled" data-step="21" onclick="editStep(21)">
+      <span class="step-num">21</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="22" onclick="editStep(22)">
+      <span class="step-num">22</span>
+      <span class="step-cmd">6</span>
+    </div><div class="prog-step filled" data-step="23" onclick="editStep(23)">
+      <span class="step-num">23</span>
+      <span class="step-cmd">GTO</span>
+    </div><div class="prog-step filled" data-step="24" onclick="editStep(24)">
+      <span class="step-num">24</span>
+      <span class="step-cmd">7</span>
+    </div><div class="prog-step filled" data-step="25" onclick="editStep(25)">
+      <span class="step-num">25</span>
+      <span class="step-cmd">4</span>
+    </div><div class="prog-step filled" data-step="26" onclick="editStep(26)">
+      <span class="step-num">26</span>
+      <span class="step-cmd">subr</span>
+    </div><div class="prog-step filled" data-step="27" onclick="editStep(27)">
+      <span class="step-num">27</span>
+      <span class="step-cmd">4</span>
+    </div><div class="prog-step filled" data-step="28" onclick="editStep(28)">
+      <span class="step-num">28</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="29" onclick="editStep(29)">
+      <span class="step-num">29</span>
+      <span class="step-cmd">int</span>
+    </div><div class="prog-step filled" data-step="30" onclick="editStep(30)">
+      <span class="step-num">30</span>
+      <span class="step-cmd">SUM</span>
+    </div><div class="prog-step filled" data-step="31" onclick="editStep(31)">
+      <span class="step-num">31</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="32" onclick="editStep(32)">
+      <span class="step-num">32</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="33" onclick="editStep(33)">
+      <span class="step-num">33</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="34" onclick="editStep(34)">
+      <span class="step-num">34</span>
+      <span class="step-cmd">subr</span>
+    </div><div class="prog-step filled" data-step="35" onclick="editStep(35)">
+      <span class="step-num">35</span>
+      <span class="step-cmd">5</span>
+    </div><div class="prog-step filled" data-step="36" onclick="editStep(36)">
+      <span class="step-num">36</span>
+      <span class="step-cmd">9</span>
+    </div><div class="prog-step filled" data-step="37" onclick="editStep(37)">
+      <span class="step-num">37</span>
+      <span class="step-cmd">=</span>
+    </div><div class="prog-step filled" data-step="38" onclick="editStep(38)">
+      <span class="step-num">38</span>
+      <span class="step-cmd">R/S</span>
+    </div><div class="prog-step filled" data-step="39" onclick="editStep(39)">
+      <span class="step-num">39</span>
+      <span class="step-cmd">RST</span>
+    </div><div class="prog-step filled" data-step="40" onclick="editStep(40)">
+      <span class="step-num">40</span>
+      <span class="step-cmd">pi</span>
+    </div><div class="prog-step filled" data-step="41" onclick="editStep(41)">
+      <span class="step-num">41</span>
+      <span class="step-cmd">+</span>
+    </div><div class="prog-step filled" data-step="42" onclick="editStep(42)">
+      <span class="step-num">42</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="43" onclick="editStep(43)">
+      <span class="step-num">43</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="44" onclick="editStep(44)">
+      <span class="step-num">44</span>
+      <span class="step-cmd">=</span>
+    </div><div class="prog-step filled" data-step="45" onclick="editStep(45)">
+      <span class="step-num">45</span>
+      <span class="step-cmd">yx</span>
+    </div><div class="prog-step filled" data-step="46" onclick="editStep(46)">
+      <span class="step-num">46</span>
+      <span class="step-cmd">8</span>
+    </div><div class="prog-step filled" data-step="47" onclick="editStep(47)">
+      <span class="step-num">47</span>
+      <span class="step-cmd">-</span>
+    </div><div class="prog-step filled" data-step="48" onclick="editStep(48)">
+      <span class="step-num">48</span>
+      <span class="step-cmd">int</span>
+    </div><div class="prog-step filled" data-step="49" onclick="editStep(49)">
+      <span class="step-num">49</span>
+      <span class="step-cmd">=</span>
+    </div><div class="prog-step filled" data-step="50" onclick="editStep(50)">
+      <span class="step-num">50</span>
+      <span class="step-cmd">STO</span>
+    </div><div class="prog-step filled" data-step="51" onclick="editStep(51)">
+      <span class="step-num">51</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="52" onclick="editStep(52)">
+      <span class="step-num">52</span>
+      <span class="step-cmd">*</span>
+    </div><div class="prog-step filled" data-step="53" onclick="editStep(53)">
+      <span class="step-num">53</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="54" onclick="editStep(54)">
+      <span class="step-num">54</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="55" onclick="editStep(55)">
+      <span class="step-num">55</span>
+      <span class="step-cmd">+</span>
+    </div><div class="prog-step filled" data-step="56" onclick="editStep(56)">
+      <span class="step-num">56</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="57" onclick="editStep(57)">
+      <span class="step-num">57</span>
+      <span class="step-cmd">=</span>
+    </div><div class="prog-step filled" data-step="58" onclick="editStep(58)">
+      <span class="step-num">58</span>
+      <span class="step-cmd">rtn</span>
+    </div><div class="prog-step filled" data-step="59" onclick="editStep(59)">
+      <span class="step-num">59</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="60" onclick="editStep(60)">
+      <span class="step-num">60</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="61" onclick="editStep(61)">
+      <span class="step-num">61</span>
+      <span class="step-cmd">6</span>
+    </div><div class="prog-step filled" data-step="62" onclick="editStep(62)">
+      <span class="step-num">62</span>
+      <span class="step-cmd">x&gt;=t</span>
+    </div><div class="prog-step filled" data-step="63" onclick="editStep(63)">
+      <span class="step-num">63</span>
+      <span class="step-cmd">9</span>
+    </div><div class="prog-step filled" data-step="64" onclick="editStep(64)">
+      <span class="step-num">64</span>
+      <span class="step-cmd">7</span>
+    </div><div class="prog-step filled" data-step="65" onclick="editStep(65)">
+      <span class="step-num">65</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="66" onclick="editStep(66)">
+      <span class="step-num">66</span>
+      <span class="step-cmd">pause</span>
+    </div><div class="prog-step filled" data-step="67" onclick="editStep(67)">
+      <span class="step-num">67</span>
+      <span class="step-cmd">pause</span>
+    </div><div class="prog-step filled" data-step="68" onclick="editStep(68)">
+      <span class="step-num">68</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="69" onclick="editStep(69)">
+      <span class="step-num">69</span>
+      <span class="step-cmd">5</span>
+    </div><div class="prog-step filled" data-step="70" onclick="editStep(70)">
+      <span class="step-num">70</span>
+      <span class="step-cmd">R/S</span>
+    </div><div class="prog-step filled" data-step="71" onclick="editStep(71)">
+      <span class="step-num">71</span>
+      <span class="step-cmd">GTO</span>
+    </div><div class="prog-step filled" data-step="72" onclick="editStep(72)">
+      <span class="step-num">72</span>
+      <span class="step-cmd">8</span>
+    </div><div class="prog-step filled" data-step="73" onclick="editStep(73)">
+      <span class="step-num">73</span>
+      <span class="step-cmd">6</span>
+    </div><div class="prog-step filled" data-step="74" onclick="editStep(74)">
+      <span class="step-num">74</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="75" onclick="editStep(75)">
+      <span class="step-num">75</span>
+      <span class="step-cmd">*</span>
+    </div><div class="prog-step filled" data-step="76" onclick="editStep(76)">
+      <span class="step-num">76</span>
+      <span class="step-cmd">.</span>
+    </div><div class="prog-step filled" data-step="77" onclick="editStep(77)">
+      <span class="step-num">77</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="78" onclick="editStep(78)">
+      <span class="step-num">78</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="79" onclick="editStep(79)">
+      <span class="step-num">79</span>
+      <span class="step-cmd">fix</span>
+    </div><div class="prog-step filled" data-step="80" onclick="editStep(80)">
+      <span class="step-num">80</span>
+      <span class="step-cmd">2</span>
+    </div><div class="prog-step filled" data-step="81" onclick="editStep(81)">
+      <span class="step-num">81</span>
+      <span class="step-cmd">+</span>
+    </div><div class="prog-step filled" data-step="82" onclick="editStep(82)">
+      <span class="step-num">82</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="83" onclick="editStep(83)">
+      <span class="step-num">83</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="84" onclick="editStep(84)">
+      <span class="step-num">84</span>
+      <span class="step-cmd">=</span>
+    </div><div class="prog-step filled" data-step="85" onclick="editStep(85)">
+      <span class="step-num">85</span>
+      <span class="step-cmd">R/S</span>
+    </div><div class="prog-step filled" data-step="86" onclick="editStep(86)">
+      <span class="step-num">86</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="87" onclick="editStep(87)">
+      <span class="step-num">87</span>
+      <span class="step-cmd">STO</span>
+    </div><div class="prog-step filled" data-step="88" onclick="editStep(88)">
+      <span class="step-num">88</span>
+      <span class="step-cmd">1</span>
+    </div><div class="prog-step filled" data-step="89" onclick="editStep(89)">
+      <span class="step-num">89</span>
+      <span class="step-cmd">STO</span>
+    </div><div class="prog-step filled" data-step="90" onclick="editStep(90)">
+      <span class="step-num">90</span>
+      <span class="step-cmd">2</span>
+    </div><div class="prog-step filled" data-step="91" onclick="editStep(91)">
+      <span class="step-num">91</span>
+      <span class="step-cmd">fix</span>
+    </div><div class="prog-step filled" data-step="92" onclick="editStep(92)">
+      <span class="step-num">92</span>
+      <span class="step-cmd">0</span>
+    </div><div class="prog-step filled" data-step="93" onclick="editStep(93)">
+      <span class="step-num">93</span>
+      <span class="step-cmd">RCL</span>
+    </div><div class="prog-step filled" data-step="94" onclick="editStep(94)">
+      <span class="step-num">94</span>
+      <span class="step-cmd">4</span>
+    </div><div class="prog-step filled" data-step="95" onclick="editStep(95)">
+      <span class="step-num">95</span>
+      <span class="step-cmd">R/S</span>
+    </div><div class="prog-step filled" data-step="96" onclick="editStep(96)">
+      <span class="step-num">96</span>
+      <span class="step-cmd">RST</span>
+    </div><div class="prog-step filled" data-step="97" onclick="editStep(97)">
+      <span class="step-num">97</span>
+      <span class="step-cmd">xt</span>
+    </div><div class="prog-step filled" data-step="98" onclick="editStep(98)">
+      <span class="step-num">98</span>
+      <span class="step-cmd">pause</span>
+    </div><div class="prog-step filled" data-step="99" onclick="editStep(99)">
+      <span class="step-num">99</span>
+      <span class="step-cmd">rtn</span>
+    </div></div>
+    <div class="prog-toolbar">
+      <button onclick="showSaveModal()">💾 Save</button>
+      <button onclick="showLoadModal()">📂 Load</button>
+      <button onclick="loadDemoBlackJack()">BlackJack77</button>
+    </div>
+    <div class="speed-indicator" id="speedInfo">Tap any step to edit</div>
+  </div>
 </div>
-<div class="side-panel">
-    <h3>Program Memory</h3>
-    <div class="steps-box" id="stepsList"></div>
-    <div class="file-controls">
-        <div class="io-btn" onclick="saveProgram()">Save Prog</div>
-        <label class="io-btn">Load Prog<input type="file" id="fileInput" style="display:none;" onchange="loadProgram(event)"></label>
-        <div class="io-btn" onclick="loadDemoBlackJack()">Load Demo: BlackJack77</div>
+
+<!-- Edit Step Modal -->
+<div class="modal-overlay" id="editModal" style="display:none">
+  <div class="modal-sheet" id="editSheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="editTitle">Edit Step 00</div>
+    <div class="modal-input-row">
+      <select id="editCmd">
+        <option value="Nop">Nop (No Operation)</option>
+      </select>
     </div>
+    <div class="modal-input-row" id="editArgRow" style="display:none">
+      <input type="number" id="editArg" min="0" max="99" placeholder="Register/Address (0-99)">
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-delete" id="btnClearStep" onclick="clearStep()">Clear</button>
+      <button class="btn-save" onclick="saveStep()">Save</button>
+    </div>
+  </div>
 </div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Save Program</div>
+    <div class="modal-input-row">
+      <input type="text" id="saveName" placeholder="Program name" maxlength="50">
+    </div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn-save" onclick="doSave()">Save to Library</button>
+    </div>
+  </div>
+</div>
+
+<!-- Load Modal -->
+<div class="modal-overlay" id="loadModal" style="display:none">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Load Program</div>
+    <div class="save-list" id="saveList">Loading...</div>
+    <div class="modal-buttons">
+      <button class="btn-cancel" onclick="closeLoadModal()">Cancel</button>
+      <label class="io-btn" style="cursor:pointer;text-align:center;padding:10px;border-radius:8px;background:#2c2c2e;color:#fff;font-size:13px;font-weight:600;display:block;">
+        Import File<input type="file" id="importFile" accept=".json,.sr56" style="display:none" onchange="importProgram(event)">
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">BlackJack77 loaded! GTO 86 R/S to run.</div>
+
 <script>
-    let currentInput = "0", storedValue = null, pendingOp = null, startNewInput = true;
-    let factorValue = null, factorOp = null;
-    let displayDecimals = null; // null = auto, 0-8 = fixed decimal places shown
-    let registers = Array(10).fill(0), testRegisterT = 0, angularMode = "DEG";
-    let state2nd = false, stateInv = false;
-    let parenStack = [];
-    let awaitingReg = null, awaitingGto = false, awaitingDsz = false;
-    let digitBuffer = "";
-    let returnStack = [];
-    let programSpace = Array(100).fill("Nop"), pc = 0, isLearnMode = false, isRunning = false, loopTimeout = null;
-    let nextStepDelay = 30;
+// ──────────────────────────────────────────────
+// TI SR-56 Calculator Engine
+// ──────────────────────────────────────────────
 
-    const displayEl = document.getElementById('display'), stepsListEl = document.getElementById('stepsList');
-    const ind2nd = document.getElementById('ind-2nd'), indInv = document.getElementById('ind-inv');
+const CMDS_NO_ARG = [
+  'Nop','+','-','*','/','yx','root_y','=','CLR','CE','x2','sqrt','lnx','log','ex','10x',
+  '1/x','sin','cos','tan','abs','int','pi','+/-','xt','cp','CMs','pause',
+  'subr','rtn','R/S','RST','nop','rad','x=t','x>=t','fn','prt','pap','list',
+  'mean','s_dev','p_r','r_p','sigma_plus','sigma_minus'
+];
+const CMDS_WITH_ARG = ['STO','RCL','SUM','exc','prod','fix','GTO','dsz','bst'];
 
-    window.onload = function() {
+function buildCmdOptions() {
+  let html = '';
+  for (let c of CMDS_NO_ARG) html += `<option value="${c}">${c}</option>`;
+  for (let c of CMDS_WITH_ARG) html += `<option value="${c}" data-arg="1">${c}</option>`;
+  return html;
+}
+
+// State
+let state = {
+  input: '0', stored: null, pendingOp: null, newInput: true,
+  factorVal: null, factorOp: null, decimals: null,
+  registers: Array(10).fill(0), testReg: 0,
+  angleMode: 'DEG', // DEG or RAD
+  is2nd: false, isInv: false,
+  parenStack: [],
+  awaitingReg: null, awaitingGto: false, awaitingDsz: false,
+  digitBuf: '',
+  returnStack: [],
+  program: Array(100).fill('Nop'),
+  pc: 0,
+  learnMode: false,
+  running: false,
+  runTimeout: null,
+  runDelay: 30
+};
+
+// ──────────────────────────────────────────────
+// Display
+// ──────────────────────────────────────────────
+const displayEl = document.getElementById('display');
+const ind2nd = document.getElementById('ind2nd');
+const indInv = document.getElementById('indInv');
+const indDeg = document.getElementById('indDeg');
+const indRad = document.getElementById('indRad');
+
+function updateIndicators() {
+  ind2nd.className = state.is2nd ? 'active' : '';
+  indInv.className = state.isInv ? 'active' : '';
+  if (state.angleMode === 'DEG') {
+    indDeg.style.display = ''; indRad.style.display = 'none';
+  } else {
+    indDeg.style.display = 'none'; indRad.style.display = '';
+    indRad.className = 'active';
+  }
+}
+
+function updateDisplay(val) {
+  updateIndicators();
+  if (state.learnMode) {
+    let cmd = state.program[state.pc] || 'Nop';
+    displayEl.textContent = String(state.pc).padStart(2,'0') + '  ' + cmd.substring(0,7).toUpperCase();
+    return;
+  }
+  let s = String(val);
+  if (s === 'NaN' || s === 'Infinity' || s === '-Infinity') {
+    displayEl.textContent = '   Error.   '; return;
+  }
+  let n = parseFloat(s);
+  if (state.decimals !== null && Number.isFinite(n)) {
+    let f = n.toFixed(state.decimals);
+    if (!f.includes('.')) f += '.';
+    if (f.length > 12) f = f.substring(0,12);
+    displayEl.textContent = f; return;
+  }
+  if (Math.abs(n) >= 1e10 || (Math.abs(n) < 1e-4 && n !== 0)) {
+    let parts = n.toExponential(7).split('e');
+    let exp = parseInt(parts[1]);
+    displayEl.textContent = parseFloat(parts[0]).toFixed(5) + ' ' + (exp>=0?'+'+String(exp).padStart(2,'0'):String(exp).padStart(3,'0'));
+    return;
+  }
+  if (!s.includes('.')) s += '.';
+  if (s.length > 12) s = s.substring(0,12);
+  displayEl.textContent = s;
+}
+
+function getRad(v) { return state.angleMode === 'DEG' ? v * Math.PI / 180 : v; }
+function getAng(v) { return state.angleMode === 'DEG' ? v * 180 / Math.PI : v; }
+function applyOp(l, op, r) {
+  switch(op) {
+    case '+': return l+r; case '-': return l-r; case '*': return l*r; case '/': return l/r;
+    case 'yx': return Math.pow(l, r);
+    case 'root_y': return Math.pow(l, 1 / r);
+  }
+  return r;
+}
+
+// ──────────────────────────────────────────────
+// Key Press Logic
+// ──────────────────────────────────────────────
+function resolve2nd(key) {
+  const map = {
+    lnx:'log', ex:'10x', LRN:'fn', GTO:'dsz', sin:'abs', cos:'int', tan:'1/x',
+    SST:'bst', xt:'x=t', STO:'CMs', RCL:'exc', SUM:'prod', 'R/S':'nop',
+    RST:'x>=t', x2:'sqrt', EE:'fix', yx:'root_y', CE:'cp', '(':'subr',
+    ')':'rtn', '/':'pause', '*':'pi', '-':'rad', '4':'sigma_plus', '5':'sigma_minus',
+    '+':'mean', '1':'p_r', '2':'r_p', '0':'s_dev', '.':'prt', '+/-':'pap', '=':'list'
+  };
+  return map[key] || key;
+}
+
+function press(key) {
+  if (key === '2nd') { state.is2nd = !state.is2nd; updateIndicators(); return; }
+  if (key === 'INV' && !state.learnMode) { state.isInv = !state.isInv; updateIndicators(); return; }
+
+  let active = key;
+  if (state.is2nd) {
+    state.is2nd = false;
+    active = resolve2nd(key);
+  }
+  let useInv = state.isInv;
+  if (useInv && ['sin','cos','tan','lnx','x2','log'].includes(active)) {
+    // INV consumed below in switch cases
+  }
+
+  // Learn mode: record keystrokes into program memory
+  if (state.learnMode && !['LRN','SST','bst'].includes(active)) {
+    state.program[state.pc] = active;
+    state.pc = (state.pc + 1) % 100;
+    renderProgramList();
+    updateDisplay(state.input);
+    return;
+  }
+
+  // Awaiting register number (for STO, RCL, SUM, exc, prod, fix)
+  if (state.awaitingReg) {
+    if (!isNaN(active)) {
+      let r = parseInt(active);
+      let cur = parseFloat(state.input);
+      switch (state.awaitingReg) {
+        case 'STO': state.registers[r] = cur; state.newInput = true; break;
+        case 'RCL': state.input = String(state.registers[r]); updateDisplay(state.input); state.newInput = true; break;
+        case 'exc': { let t = state.registers[r]; state.registers[r] = cur; state.input = String(t); updateDisplay(state.input); state.newInput = true; break; }
+        case 'SUM':
+          state.registers[r] = useInv ? state.registers[r] - cur : state.registers[r] + cur;
+          state.newInput = true; useInv = false; break;
+        case 'prod':
+          state.registers[r] = useInv ? state.registers[r] / cur : state.registers[r] * cur;
+          state.newInput = true; useInv = false; break;
+        case 'fix':
+          if (!isNaN(r)) { state.decimals = Math.max(0, Math.min(8, r)); updateDisplay(state.input); }
+          break;
+      }
+    }
+    state.awaitingReg = null;
+    if (useInv) state.isInv = false;
+    return;
+  }
+
+  // Awaiting 2-digit address for GTO/dsz
+  if (state.awaitingGto || state.awaitingDsz) {
+    if (!isNaN(active)) {
+      state.digitBuf += active;
+      if (state.digitBuf.length === 2) {
+        let addr = parseInt(state.digitBuf);
+        if (addr >= 0 && addr < 100) {
+          if (state.awaitingGto) state.pc = addr;
+          else if (state.awaitingDsz) { state.registers[0]--; if (state.registers[0] > 0) state.pc = addr; }
+        }
+        state.awaitingGto = state.awaitingDsz = false;
+        state.digitBuf = '';
         renderProgramList();
-        loadDemoBlackJack();
-    };
+      }
+    } else {
+      state.awaitingGto = state.awaitingDsz = false; state.digitBuf = '';
+      renderProgramList();
+    }
+    return;
+  }
 
-    // Mobile layout handling: when in portrait or narrow screens, place program memory below
-    // the calculator and animate its entrance while keeping the calculator sticky/static.
-    function updateMobileLayout() {
-        const isPortrait = window.matchMedia('(orientation: portrait)').matches || window.innerWidth <= 700;
-        const side = document.querySelector('.side-panel');
-        if (!side) return;
-        side.classList.remove('mobile-enter','mobile-exit');
-        if (isPortrait) {
-            // add enter animation class briefly
-            side.classList.add('mobile-enter');
-            // ensure calculator stays visible and static
-            document.querySelector('.calculator').style.pointerEvents = 'auto';
-        } else {
-            side.classList.add('mobile-exit');
-            document.querySelector('.calculator').style.pointerEvents = '';
-        }
-    }
-    window.addEventListener('resize', updateMobileLayout);
-    window.addEventListener('orientationchange', updateMobileLayout);
-    // run once on load
-    setTimeout(updateMobileLayout, 60);
+  // Digit handling
+  if (!isNaN(active)) {
+    if (state.newInput) { state.input = active; state.newInput = false; }
+    else { if (state.input === '0') state.input = active; else state.input += active; }
+    updateDisplay(state.input); return;
+  }
+  if (active === '.') {
+    if (state.newInput) { state.input = '0.'; state.newInput = false; }
+    else if (!state.input.includes('.')) state.input += '.';
+    updateDisplay(state.input); return;
+  }
 
-    function toggle2nd(force) { state2nd = (force !== undefined) ? force : !state2nd; ind2nd.className = state2nd ? "active" : ""; }
-    function toggleInv(force) { stateInv = (force !== undefined) ? force : !stateInv; indInv.className = stateInv ? "active" : ""; }
+  // Operation dispatch
+  let val = parseFloat(state.input);
+  switch (active) {
+    // Trig
+    case 'sin':
+      if (useInv) val = getAng(Math.asin(val));
+      else val = Math.sin(getRad(val));
+      state.isInv = false; break;
+    case 'cos':
+      if (useInv) val = getAng(Math.acos(val));
+      else val = Math.cos(getRad(val));
+      state.isInv = false; break;
+    case 'tan':
+      if (useInv) val = getAng(Math.atan(val));
+      else val = Math.tan(getRad(val));
+      state.isInv = false; break;
+    // Log/exp
+    case 'lnx':
+      if (useInv) val = Math.exp(val);
+      else val = Math.log(val);
+      state.isInv = false; break;
+    case 'log':
+      if (useInv) val = Math.pow(10, val);
+      else val = Math.log10(val);
+      state.isInv = false; break;
+    case 'ex': val = Math.exp(val); break;
+    case '10x': val = Math.pow(10, val); break;
+    // Other unary
+    case '1/x': val = 1 / val; break;
+    case 'x2':
+      if (useInv) val = Math.sqrt(val);
+      else val = val * val;
+      state.isInv = false; break;
+    case 'sqrt': val = Math.sqrt(val); break;
+    case 'abs': val = Math.abs(val); break;
+    case 'int': val = Math.floor(val); break;
+    case 'pi': val = Math.PI; break;
+    case '+/-': val = -val; break;
+    case 'xt': { let t = state.testReg; state.testReg = val; val = t; break; }
+    // Program control
+    case 'cp':
+      state.program = Array(100).fill('Nop');
+      state.pc = 0; state.returnStack = [];
+      renderProgramList(); updateDisplay(state.input); return;
+    case 'CMs': state.registers.fill(0); renderProgramList(); updateDisplay(state.input); return;
+    case 'pause': state.runDelay = 500; return;
+    // Register ops (need digit arg)
+    case 'STO': case 'RCL': case 'SUM': case 'exc': case 'prod':
+      state.awaitingReg = active; return;
+    case 'fix':
+      if (useInv) { state.decimals = null; state.isInv = false; updateIndicators(); updateDisplay(state.input); }
+      else { state.awaitingReg = active; }
+      return;
+    // Paren/Subroutine in immediate mode
+    case 'subr':
+      state.parenStack.push({ s: state.stored, p: state.pendingOp, f: state.factorVal, fo: state.factorOp });
+      state.stored = null; state.pendingOp = null; state.factorVal = null; state.factorOp = null;
+      state.newInput = true; return;
+    case 'rtn': {
+      let r = parseFloat(state.input);
+      if (state.factorOp) { r = applyOp(state.factorVal, state.factorOp, r); state.factorOp = null; state.factorVal = null; }
+      if (state.pendingOp) { r = applyOp(state.stored, state.pendingOp, r); state.pendingOp = null; state.stored = null; }
+      state.input = String(r);
+      if (state.parenStack.length > 0) {
+        let f = state.parenStack.pop();
+        state.stored = f.s; state.pendingOp = f.p; state.factorVal = f.f; state.factorOp = f.fo;
+      }
+      updateDisplay(state.input); state.newInput = true; return;
+    }
+    // Clear
+    case 'CE': state.input = '0'; updateDisplay(state.input); return;
+    case 'CLR':
+      state.input = '0'; state.stored = null; state.pendingOp = null;
+      state.factorVal = null; state.factorOp = null; state.parenStack = [];
+      state.newInput = true; updateDisplay(state.input); return;
+    // Mode
+    case 'rad': state.angleMode = state.angleMode === 'DEG' ? 'RAD' : 'DEG'; updateIndicators(); return;
+    case 'LRN':
+      state.learnMode = !state.learnMode;
+      renderProgramList(); updateDisplay(state.input); return;
+    // Program flow immediate
+    case 'GTO': state.awaitingGto = true; state.digitBuf = ''; return;
+    case 'dsz': state.awaitingDsz = true; state.digitBuf = ''; return;
+    case 'RST': state.pc = 0; stopRunning(); renderProgramList(); return;
+    case 'SST': executeSingleStep(); return;
+    case 'bst': state.pc = (state.pc - 1 + 100) % 100; renderProgramList(); return;
+    // Conditional skips (immediate)
+    case 'x=t': {
+      let d1 = parseInt(state.program[(state.pc+1)%100]);
+      let d2 = parseInt(state.program[(state.pc+2)%100]);
+      let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+      let cmp = state.isInv ? (parseFloat(state.input) !== state.testReg) : (parseFloat(state.input) === state.testReg);
+      state.isInv = false;
+      if (cmp && !isNaN(target)) state.pc = target % 100;
+      else state.pc = (state.pc + 3) % 100;
+      renderProgramList(); return;
+    }
+    case 'x>=t': {
+      let d1 = parseInt(state.program[(state.pc+1)%100]);
+      let d2 = parseInt(state.program[(state.pc+2)%100]);
+      let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+      let cmp = state.isInv ? (parseFloat(state.input) < state.testReg) : (parseFloat(state.input) >= state.testReg);
+      state.isInv = false;
+      if (cmp && !isNaN(target)) state.pc = target % 100;
+      else state.pc = (state.pc + 3) % 100;
+      renderProgramList(); return;
+    }
+    // Run/Stop
+    case 'R/S':
+      if (state.running) stopRunning();
+      else startRunning();
+      state.newInput = true; return;
+  }
 
-    function renderProgramList() {
-        stepsListEl.innerHTML = '';
-        for (let i = 0; i < 100; i++) {
-            let row = document.createElement('div');
-            row.className = 'step-item' + (i === pc ? ' active' : '') + (programSpace[i] !== "Nop" ? ' filled' : '');
-            row.id = 'step-' + i;
-            row.style.cursor = isLearnMode ? "pointer" : "default";
-            
-            row.onclick = (function(index) {
-                return function() {
-                    if (isLearnMode) {
-                        pc = index;
-                        renderProgramList();
-                        updateDisplay(currentInput);
-                    }
-                };
-            })(i);
+  // After unary ops, update display
+  if (['sin','cos','tan','lnx','log','ex','10x','1/x','x2','sqrt','abs','int','pi','+/-','exc','xt'].includes(active)) {
+    state.input = String(val); updateDisplay(state.input); state.newInput = true; return;
+  }
 
-            let lbl = document.createElement('span'); lbl.textContent = 'Step ' + String(i).padStart(2, '0');
-            let cmd = document.createElement('span'); cmd.textContent = programSpace[i];
-            row.appendChild(lbl); row.appendChild(cmd); stepsListEl.appendChild(row);
-        }
-        let activeRow = document.getElementById('step-' + pc);
-        if (activeRow) activeRow.scrollIntoView({ block: 'nearest' });
+  // Binary operators
+  if (['+','-','*','/','yx','root_y'].includes(active)) {
+    let cur = parseFloat(state.input);
+    if (active === '+' || active === '-') {
+      if (state.factorOp) { cur = applyOp(state.factorVal, state.factorOp, cur); state.factorVal = null; state.factorOp = null; }
+      if (state.pendingOp) { state.stored = applyOp(state.stored, state.pendingOp, cur); }
+      else { state.stored = cur; }
+      state.input = String(cur); updateDisplay(state.input);
+      state.pendingOp = active; state.newInput = true; return;
     }
-    function updateDisplay(val) {
-        if (isLearnMode) {
-            displayEl.textContent = String(pc).padStart(2, '0') + '  ' + programSpace[pc].substring(0,6).toUpperCase().padEnd(6, ' ');
-            return;
-        }
-        let str = String(val);
-        if (str === "NaN" || str === "Infinity" || str === "-Infinity") { displayEl.textContent = "    Error.   "; return; }
-        let num = parseFloat(str);
-        // If a fixed display precision is set, honor it (0-8) without altering internal value
-        if (displayDecimals !== null && Number.isFinite(num)) {
-            let formatted = num.toFixed(displayDecimals);
-            if (!formatted.includes('.')) formatted += '.';
-            if (formatted.length > 12) formatted = formatted.substring(0, 12);
-            displayEl.textContent = formatted;
-            return;
-        }
-        if (Math.abs(num) >= 1e10 || (Math.abs(num) < 1e-4 && num !== 0)) {
-            let parts = num.toExponential(7).split('e');
-            let exp = parseInt(parts[1]);
-            displayEl.textContent = parseFloat(parts[0]).toFixed(5) + " " + (exp >= 0 ? "+" + String(exp).padStart(2,'0') : String(exp).padStart(3,'0'));
-            return;
-        }
-        if (!str.includes('.')) str += '.';
-        if (str.length > 12) str = str.substring(0, 12);
-        displayEl.textContent = str;
-    }
-    function getRad(v) { return angularMode === "DEG" ? v * Math.PI / 180 : v; }
-    function getAng(v) { return angularMode === "DEG" ? v * 180 / Math.PI : v; }
-    function applyOp(left, op, right) {
-        switch (op) {
-            case '+': return left + right;
-            case '-': return left - right;
-            case '*': return left * right;
-            case '/': return left / right;
-            case 'yx': return Math.pow(left, right);
-        }
-        return right;
-    }
+    if (state.factorOp) { state.factorVal = applyOp(state.factorVal, state.factorOp, cur); }
+    else { state.factorVal = cur; }
+    state.factorOp = active; state.newInput = true; return;
+  }
 
-    function press(key) {
-        if (key === '2nd') { toggle2nd(); return; }
-        if (key === 'INV' && !isLearnMode) { toggleInv(); return; }
-        let activeKey = key;
-        if (state2nd) {
-            toggle2nd(false);
-            if (key === 'lnx') activeKey = 'log';
-            else if (key === 'ex') activeKey = '10x';
-            else if (key === 'LRN') activeKey = 'fn';
-            else if (key === 'GTO') activeKey = 'dsz';
-            else if (key === 'sin') activeKey = 'abs';
-            else if (key === 'cos') activeKey = 'int';
-            else if (key === 'tan') activeKey = '1/x';
-            else if (key === 'SST') activeKey = 'bst';
-            else if (key === 'xt') activeKey = 'x=t';
-            else if (key === 'STO') activeKey = 'CMs';
-            else if (key === 'RCL') activeKey = 'exc';
-            else if (key === 'SUM') activeKey = 'prod';
-            else if (key === 'R/S') activeKey = 'nop';
-            else if (key === 'RST') activeKey = 'x>=t';
-            else if (key === 'x2') activeKey = 'sqrt';
-            else if (key === 'EE') activeKey = 'fix';
-            else if (key === 'yx') activeKey = 'root_y';
-            else if (key === 'CE') activeKey = 'cp';
-            else if (key === '(') activeKey = 'subr';
-            else if (key === ')') activeKey = 'rtn';
-            else if (key === '/') activeKey = 'pause';
-            else if (key === '*') activeKey = 'pi';
-            else if (key === '-') activeKey = 'rad';
-            else if (key === '4') activeKey = 'sigma_plus';
-            else if (key === '5') activeKey = 'sigma_minus';
-            else if (key === '+') activeKey = 'mean';
-            else if (key === '1') activeKey = 'p_r';
-            else if (key === '2') activeKey = 'r_p';
-            else if (key === '0') activeKey = 's_dev';
-            else if (key === '.') activeKey = 'prt';
-            else if (key === '+/-') activeKey = 'pap';
-            else if (key === '=') activeKey = 'list';
-        }
-        let applyInv = stateInv;
-        if (applyInv && ['sin', 'cos', 'tan', 'lnx', 'x2', 'log'].includes(activeKey)) { toggleInv(false); }
+  if (active === '=') {
+    let cur = parseFloat(state.input);
+    if (state.factorOp) { cur = applyOp(state.factorVal, state.factorOp, cur); state.factorOp = null; state.factorVal = null; }
+    if (state.pendingOp) { cur = applyOp(state.stored, state.pendingOp, cur); state.pendingOp = null; state.stored = null; }
+    state.input = String(cur); updateDisplay(state.input); state.newInput = true; return;
+  }
+}
 
-        if (isLearnMode && !['LRN', 'SST', 'bst'].includes(activeKey)) {
-            programSpace[pc] = activeKey; pc = (pc + 1) % 100; renderProgramList(); updateDisplay(currentInput); return;
-        }
-        if (awaitingReg) {
-            if (!isNaN(activeKey)) {
-                let r = parseInt(activeKey), cur = parseFloat(currentInput);
-                if (awaitingReg === 'STO') { registers[r] = cur; startNewInput = true; }
-                else if (awaitingReg === 'RCL') { currentInput = String(registers[r]); updateDisplay(currentInput); startNewInput = true; }
-                else if (awaitingReg === 'exc') { let t = registers[r]; registers[r] = cur; currentInput = String(t); updateDisplay(currentInput); startNewInput = true; }
-                else if (awaitingReg === 'SUM') {
-                    if (applyInv) registers[r] -= cur;
-                    else registers[r] += cur;
-                }
-                else if (awaitingReg === 'prod') {
-                    if (applyInv) registers[r] /= cur;
-                    else registers[r] *= cur;
-                }
-                else if (awaitingReg === 'fix') {
-                    // set display decimal places (0-8) without altering internal value
-                    let n = parseInt(activeKey);
-                    if (!isNaN(n)) {
-                        displayDecimals = Math.max(0, Math.min(8, n));
-                        updateDisplay(currentInput);
-                    }
-                }
-            }
-            awaitingReg = null; return;
-        }
-        if (awaitingGto || awaitingDsz) {
-            if (!isNaN(activeKey)) {
-                digitBuffer += activeKey;
-                if (digitBuffer.length === 2) {
-                    let addr = parseInt(digitBuffer);
-                    if (addr >= 0 && addr < 100) {
-                        if (awaitingGto) pc = addr;
-                        else if (awaitingDsz) { registers[0]--; if (registers[0] > 0) pc = addr; }
-                    }
-                    awaitingGto = awaitingDsz = false; digitBuffer = ""; renderProgramList();
-                }
-            } else { awaitingGto = awaitingDsz = false; digitBuffer = ""; renderProgramList(); }
-            return;
-        }
-        if (!isNaN(activeKey)) {
-            if (startNewInput) { currentInput = activeKey; startNewInput = false; }
-            else { if (currentInput === "0") currentInput = activeKey; else currentInput += activeKey; }
-            updateDisplay(currentInput); return;
-        }
-        if (activeKey === '.') {
-            if (startNewInput) { currentInput = "0."; startNewInput = false; }
-            else if (!currentInput.includes('.')) currentInput += '.';
-            updateDisplay(currentInput); return;
-        }
-        let val = parseFloat(currentInput);
-        switch (activeKey) {
-            case 'sin': val = applyInv ? getAng(Math.asin(val)) : Math.sin(getRad(val)); break;
-            case 'cos': val = applyInv ? getAng(Math.acos(val)) : Math.cos(getRad(val)); break;
-            case 'tan': val = applyInv ? getAng(Math.atan(val)) : Math.tan(getRad(val)); break;
-            case 'lnx': val = applyInv ? Math.exp(val) : Math.log(val); break;
-            case 'log': val = applyInv ? Math.pow(10, val) : Math.log10(val); break;
-            case 'ex': val = Math.exp(val); break;
-            case '10x': val = Math.pow(10, val); break;
-            case '1/x': val = 1 / val; break;
-            case 'x2': val = applyInv ? Math.sqrt(val) : Math.pow(val, 2); break;
-            case 'sqrt': val = Math.sqrt(val); break;
-            case 'abs': val = Math.abs(val); break;
-            case 'int': val = Math.floor(val); break;
-            case 'pi': val = Math.PI; break;
-            case '+/-': val = -val; break;
-            case 'xt': let tempT = testRegisterT; testRegisterT = val; val = tempT; break;
-            case 'cp': programSpace = Array(100).fill("Nop"); pc = 0; returnStack = []; renderProgramList(); updateDisplay(currentInput); return;
-            case 'STO': case 'RCL': case 'SUM': case 'exc': case 'prod': case 'fix': awaitingReg = activeKey; return;
-            case 'CMs': registers.fill(0); renderProgramList(); updateDisplay(currentInput); return;
-            case 'pause': nextStepDelay = 500; return;
-            case 'subr':
-                parenStack.push({ storedValue, pendingOp, factorValue, factorOp });
-                storedValue = null; pendingOp = null; factorValue = null; factorOp = null;
-                startNewInput = true; return;
-            case 'rtn':
-                let result = parseFloat(currentInput);
-                if (factorOp) {
-                    result = applyOp(factorValue, factorOp, result);
-                    factorOp = null; factorValue = null;
-                }
-                if (pendingOp) {
-                    result = applyOp(storedValue, pendingOp, result);
-                    pendingOp = null; storedValue = null;
-                }
-                currentInput = String(result);
-                if (parenStack.length > 0) {
-                    let frame = parenStack.pop();
-                    storedValue = frame.storedValue;
-                    pendingOp = frame.pendingOp;
-                    factorValue = frame.factorValue;
-                    factorOp = frame.factorOp;
-                }
-                updateDisplay(currentInput);
-                startNewInput = true;
-                return;
-            case 'CE': currentInput = "0"; updateDisplay(currentInput); return;
-            case 'CLR': currentInput = "0"; storedValue = null; pendingOp = null; factorValue = null; factorOp = null; parenStack = []; startNewInput = true; updateDisplay(currentInput); return;
-            case 'rad': angularMode = (angularMode === "DEG") ? "RAD" : "DEG"; return;
-            case 'GTO': awaitingGto = true; digitBuffer = ""; return;
-            case 'dsz': awaitingDsz = true; digitBuffer = ""; return;
-            case 'LRN': isLearnMode = !isLearnMode; renderProgramList(); updateDisplay(currentInput); return;
-            case 'RST': pc = 0; renderProgramList(); if (isRunning) { isRunning = false; clearTimeout(loopTimeout); } return;
-            case 'SST': executeSingleStep(); return;
-            case 'bst': pc = (pc - 1 + 100) % 100; renderProgramList(); return;
-            case 'x=t': {
-                let d1 = parseInt(programSpace[(pc + 1) % 100]);
-                let d2 = parseInt(programSpace[(pc + 2) % 100]);
-                let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-                let comparison = stateInv ? (parseFloat(currentInput) !== testRegisterT) : (parseFloat(currentInput) === testRegisterT);
-                if (comparison && !isNaN(target)) {
-                    pc = target % 100;
-                } else {
-                    pc = (pc + 3) % 100; // skip the two NN digits
-                }
-                toggleInv(false);
-                renderProgramList(); return;
-            }
-            case 'x>=t': {
-                let d1 = parseInt(programSpace[(pc + 1) % 100]);
-                let d2 = parseInt(programSpace[(pc + 2) % 100]);
-                let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-                let comparison = stateInv ? (parseFloat(currentInput) < testRegisterT) : (parseFloat(currentInput) >= testRegisterT);
-                if (comparison && !isNaN(target)) {
-                    pc = target % 100;
-                } else {
-                    pc = (pc + 3) % 100; // skip the two NN digits
-                }
-                toggleInv(false);
-                renderProgramList(); return;
-            }
-            case 'R/S': if (isRunning) { isRunning = false; clearTimeout(loopTimeout); } else { isRunning = true; runProgramLoop(); } startNewInput = true; return;
-        }
-        if (['sin','cos','tan','lnx','log','ex','10x','1/x','x2','sqrt','abs','int','pi','+/-','exc','xt'].includes(activeKey)) {
-            currentInput = String(val); updateDisplay(currentInput); startNewInput = true; return;
-        }
-        if (['+', '-', '*', '/', 'yx'].includes(activeKey)) {
-            let cur = parseFloat(currentInput);
-            if (activeKey === '+' || activeKey === '-') {
-                if (factorOp) {
-                    cur = applyOp(factorValue, factorOp, cur);
-                    factorValue = null; factorOp = null;
-                }
-                if (pendingOp) {
-                    storedValue = applyOp(storedValue, pendingOp, cur);
-                } else {
-                    storedValue = cur;
-                }
-                currentInput = String(cur);
-                updateDisplay(currentInput);
-                pendingOp = activeKey;
-                startNewInput = true;
-                return;
-            }
-            if (factorOp) {
-                factorValue = applyOp(factorValue, factorOp, cur);
-            } else {
-                factorValue = cur;
-            }
-            factorOp = activeKey;
-            startNewInput = true;
-            return;
-        }
-        if (activeKey === '=') {
-            let cur = parseFloat(currentInput);
-            if (factorOp) {
-                cur = applyOp(factorValue, factorOp, cur);
-                factorOp = null; factorValue = null;
-            }
-            if (pendingOp) {
-                cur = applyOp(storedValue, pendingOp, cur);
-                pendingOp = null; storedValue = null;
-            }
-            currentInput = String(cur);
-            updateDisplay(currentInput);
-            startNewInput = true;
-            return;
-        }
-    }
-    function executePending() {
-        let cur = parseFloat(currentInput), res = storedValue;
-        switch(pendingOp) {
-            case '+': res += cur; break; case '-': res -= cur; break; case '*': res *= cur; break; case '/': res /= cur; break;
-            case 'yx': res = Math.pow(res, cur); break;
-        }
-        currentInput = String(res); updateDisplay(currentInput);
-    }
-    function executeSingleStep() {
-        let cmd = programSpace[pc];
-        nextStepDelay = 35;
-        if (cmd === 'Nop' || cmd === 'nop') { pc = (pc + 1) % 100; renderProgramList(); return true; }
-        if (cmd === 'R/S') { isRunning = false; startNewInput = true; pc = (pc + 1) % 100; renderProgramList(); return false; }
-        
-        // --- TRUE TI HARDWARE CONTROLLER CONDITIONAL SKIP PATTERNS ---
-        if (cmd === 'x=t') {
-            let d1 = parseInt(programSpace[(pc + 1) % 100]);
-            let d2 = parseInt(programSpace[(pc + 2) % 100]);
-            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-            if (parseFloat(currentInput) === testRegisterT && !isNaN(target)) {
-                pc = target % 100;
-            } else {
-                pc = (pc + 3) % 100; // skip the two NN digits
-            }
-            toggleInv(false);
-            renderProgramList(); return true;
-        }
-        if (cmd === 'x>=t') {
-            let d1 = parseInt(programSpace[(pc + 1) % 100]);
-            let d2 = parseInt(programSpace[(pc + 2) % 100]);
-            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-            let comparison = stateInv ? (parseFloat(currentInput) < testRegisterT) : (parseFloat(currentInput) >= testRegisterT);
-            if (comparison && !isNaN(target)) {
-                pc = target % 100;
-            } else {
-                pc = (pc + 3) % 100; // skip the two NN digits
-            }
-            toggleInv(false);
-            renderProgramList(); return true;
-        }
-        if (cmd === 'dsz') {
-            registers[0]--;
-            if (registers[0] > 0) { pc = (pc + 1) % 100; } 
-            else { pc = (pc + 3) % 100; }
-            renderProgramList(); return true;
-        }
+// ──────────────────────────────────────────────
+// Program Execution
+// ──────────────────────────────────────────────
+function executeSingleStep() {
+  let cmd = state.program[state.pc];
+  state.runDelay = 35;
 
-        if (cmd === 'CMs') { press(cmd); pc = (pc + 1) % 100; renderProgramList(); return true; }
-        if (['STO', 'RCL', 'SUM', 'exc', 'prod', 'fix'].includes(cmd)) { press(cmd); press(programSpace[(pc + 1) % 100]); pc = (pc + 2) % 100; renderProgramList(); return true; }
-        if (cmd === 'subr') {
-            let d1 = parseInt(programSpace[(pc + 1) % 100]);
-            let d2 = parseInt(programSpace[(pc + 2) % 100]);
-            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-            if (!isNaN(target)) {
-                returnStack.push((pc + 3) % 100);
-                pc = target % 100;
-            } else {
-                pc = (pc + 3) % 100;
-            }
-            renderProgramList(); return true;
-        }
-        if (cmd === 'rtn') {
-            pc = returnStack.length > 0 ? returnStack.pop() : (pc + 1) % 100;
-            renderProgramList(); return true;
-        }
-        if (cmd === 'GTO') {
-            let d1 = parseInt(programSpace[(pc + 1) % 100]);
-            let d2 = parseInt(programSpace[(pc + 2) % 100]);
-            let target = (isNaN(d1) ? 0 : d1) * 10 + (isNaN(d2) ? 0 : d2);
-            pc = isNaN(target) ? (pc + 3) % 100 : target % 100;
-            renderProgramList(); return true;
-        }
-        if (cmd === 'RST') {
-            returnStack = [];
-            pc = 0;
-            renderProgramList();
-            return true;
-        }
-        press(cmd); pc = (pc + 1) % 100; renderProgramList(); return true;
+  if (cmd === 'Nop' || cmd === 'nop') {
+    state.pc = (state.pc + 1) % 100; return true;
+  }
+  if (cmd === 'R/S') {
+    stopRunning(); state.newInput = true;
+    state.pc = (state.pc + 1) % 100; return false;
+  }
+
+  // x=t conditional
+  if (cmd === 'x=t') {
+    let d1 = parseInt(state.program[(state.pc+1)%100]);
+    let d2 = parseInt(state.program[(state.pc+2)%100]);
+    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+    if (parseFloat(state.input) === state.testReg && !isNaN(target))
+      state.pc = target % 100;
+    else
+      state.pc = (state.pc + 3) % 100;
+    return true;
+  }
+  // x>=t conditional
+  if (cmd === 'x>=t') {
+    let d1 = parseInt(state.program[(state.pc+1)%100]);
+    let d2 = parseInt(state.program[(state.pc+2)%100]);
+    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+    let cmp = state.isInv ? (parseFloat(state.input) < state.testReg) : (parseFloat(state.input) >= state.testReg);
+    state.isInv = false;
+    if (cmp && !isNaN(target)) state.pc = target % 100;
+    else state.pc = (state.pc + 3) % 100;
+    updateIndicators();
+    return true;
+  }
+  // dsz: decrement R0, jump to NN if > 0, else skip NN
+  if (cmd === 'dsz') {
+    state.registers[0]--;
+    let d1 = parseInt(state.program[(state.pc+1)%100]);
+    let d2 = parseInt(state.program[(state.pc+2)%100]);
+    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+    if (state.registers[0] > 0 && !isNaN(target))
+      state.pc = target % 100;
+    else
+      state.pc = (state.pc + 3) % 100;
+    return true;
+  }
+  // CMs in program
+  if (cmd === 'CMs') { press(cmd); state.pc = (state.pc + 1) % 100; return true; }
+  // Register ops with arguments (consume next step as arg)
+  if (['STO','RCL','SUM','exc','prod','fix'].includes(cmd)) {
+    press(cmd);
+    let arg = state.program[(state.pc + 1) % 100];
+    press(arg);
+    state.pc = (state.pc + 2) % 100;
+    return true;
+  }
+  // subr: subroutine call with 2-digit address
+  if (cmd === 'subr') {
+    let d1 = parseInt(state.program[(state.pc+1)%100]);
+    let d2 = parseInt(state.program[(state.pc+2)%100]);
+    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+    if (!isNaN(target)) {
+      state.returnStack.push((state.pc + 3) % 100);
+      state.pc = target % 100;
+    } else {
+      state.pc = (state.pc + 3) % 100;
     }
-    function runProgramLoop() {
-        if (!isRunning) return;
-        if (executeSingleStep() && isRunning) {
-            loopTimeout = setTimeout(runProgramLoop, nextStepDelay);
-        } else {
-            isRunning = false;
-        }
+    return true;
+  }
+  // rtn: return from subroutine
+  if (cmd === 'rtn') {
+    state.pc = state.returnStack.length > 0 ? state.returnStack.pop() : (state.pc + 1) % 100;
+    return true;
+  }
+  // GTO with 2-digit address
+  if (cmd === 'GTO') {
+    let d1 = parseInt(state.program[(state.pc+1)%100]);
+    let d2 = parseInt(state.program[(state.pc+2)%100]);
+    let target = (isNaN(d1)?0:d1)*10 + (isNaN(d2)?0:d2);
+    state.pc = isNaN(target) ? (state.pc + 3) % 100 : target % 100;
+    return true;
+  }
+  // RST: reset PC to 0
+  if (cmd === 'RST') {
+    state.returnStack = []; state.pc = 0; return true;
+  }
+
+  // Generic: press the command key
+  press(cmd);
+  state.pc = (state.pc + 1) % 100;
+  return true;
+}
+
+function startRunning() {
+  state.running = true;
+  document.getElementById('btnRun').textContent = '⏹ Stop';
+  document.getElementById('btnRun').className = 'stop-btn';
+  state.runTimeout = setTimeout(runLoop, 20);
+}
+
+function stopRunning() {
+  state.running = false;
+  if (state.runTimeout) clearTimeout(state.runTimeout);
+  state.runTimeout = null;
+  document.getElementById('btnRun').textContent = '▶ Run';
+  document.getElementById('btnRun').className = 'run-btn';
+}
+
+function toggleRun() {
+  if (state.running) stopRunning(); else startRunning();
+}
+
+function runLoop() {
+  if (!state.running) return;
+  if (executeSingleStep() && state.running) {
+    state.runTimeout = setTimeout(runLoop, state.runDelay);
+  } else {
+    stopRunning();
+    renderProgramList();
+  }
+}
+
+// ──────────────────────────────────────────────
+// Program Memory UI
+// ──────────────────────────────────────────────
+const progList = document.getElementById('progList');
+const progPc = document.getElementById('progPc');
+
+function renderProgramList() {
+  progPc.textContent = 'PC: ' + String(state.pc).padStart(2, '0');
+  let html = '';
+  for (let i = 0; i < 100; i++) {
+    let cls = 'prog-step';
+    if (i === state.pc) cls += ' current';
+    if (state.program[i] !== 'Nop') cls += ' filled';
+    let cmd = state.program[i];
+    let cmdCls = cmd === 'Nop' ? 'step-cmd nop' : 'step-cmd';
+    html += `<div class="${cls}" data-step="${i}" onclick="editStep(${i})">
+      <span class="step-num">${String(i).padStart(2,'0')}</span>
+      <span class="${cmdCls}">${cmd}</span>
+    </div>`;
+  }
+  progList.innerHTML = html;
+  // Center current step in the prog-list
+  let el = progList.querySelector(`[data-step="${state.pc}"]`);
+  if (el) {
+    let listRect = progList.getBoundingClientRect();
+    let elRect = el.getBoundingClientRect();
+    let elTop = elRect.top - listRect.top + progList.scrollTop;
+    progList.scrollTop = elTop - listRect.height / 2 + elRect.height / 2;
+  }
+}
+
+function stepForward() {
+  stopRunning();
+  executeSingleStep();
+  renderProgramList();
+}
+
+function stepBack() {
+  stopRunning();
+  state.pc = (state.pc - 1 + 100) % 100;
+  renderProgramList();
+}
+
+function resetPc() {
+  stopRunning();
+  state.pc = 0;
+  renderProgramList();
+}
+
+function clearProgram() {
+  if (confirm('Clear entire program memory?')) {
+    stopRunning();
+    state.program = Array(100).fill('Nop');
+    state.pc = 0;
+    state.returnStack = [];
+    renderProgramList();
+  }
+}
+
+// ──────────────────────────────────────────────
+// Edit Step Modal
+// ──────────────────────────────────────────────
+let editStepIndex = -1;
+
+function editStep(idx) {
+  stopRunning();
+  editStepIndex = idx;
+  document.getElementById('editTitle').textContent = 'Edit Step ' + String(idx).padStart(2, '0');
+  let sel = document.getElementById('editCmd');
+  sel.innerHTML = buildCmdOptions();
+  sel.value = state.program[idx];
+
+  let argRow = document.getElementById('editArgRow');
+  let isArgCmd = CMDS_WITH_ARG.includes(state.program[idx]);
+  argRow.style.display = isArgCmd ? 'flex' : 'none';
+
+  // If the cmd takes an arg and next step is a number, show it as the arg
+  if (isArgCmd) {
+    let nextVal = state.program[(idx + 1) % 100];
+    document.getElementById('editArg').value = (!isNaN(nextVal) && nextVal !== 'Nop') ? nextVal : '';
+  } else {
+    document.getElementById('editArg').value = '';
+  }
+
+  document.getElementById('btnClearStep').style.display = state.program[idx] !== 'Nop' ? '' : 'none';
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  editStepIndex = -1;
+}
+
+function clearStep() {
+  if (editStepIndex >= 0) {
+    state.program[editStepIndex] = 'Nop';
+    renderProgramList();
+    closeEditModal();
+  }
+}
+
+function saveStep() {
+  if (editStepIndex < 0) return;
+  let cmd = document.getElementById('editCmd').value;
+  state.program[editStepIndex] = cmd;
+
+  // If this command needs an argument, store it in the next step
+  if (CMDS_WITH_ARG.includes(cmd)) {
+    let arg = parseInt(document.getElementById('editArg').value);
+    if (!isNaN(arg) && arg >= 0 && arg <= 99) {
+      state.program[(editStepIndex + 1) % 100] = String(arg);
     }
-    function saveProgram() {
-        let text = JSON.stringify(programSpace);
-        let blob = new Blob([text], { type: 'text/plain' });
-        let anchor = document.createElement('a');
-        anchor.download = 'sr56_program.txt';
-        anchor.href = window.URL.createObjectURL(blob);
-        anchor.click();
+  }
+  renderProgramList();
+  closeEditModal();
+}
+
+// Handle cmd dropdown change to show/hide arg field
+document.getElementById('editCmd').addEventListener('change', function() {
+  let cmd = this.value;
+  let argRow = document.getElementById('editArgRow');
+  let needsArg = CMDS_WITH_ARG.includes(cmd);
+  argRow.style.display = needsArg ? 'flex' : 'none';
+  if (!needsArg) document.getElementById('editArg').value = '';
+});
+
+// ──────────────────────────────────────────────
+// Save / Load (localStorage)
+// ──────────────────────────────────────────────
+const STORAGE_KEY = 'sr56_programs';
+
+function getLibrary() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e) { return []; }
+}
+
+function saveLibrary(lib) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lib));
+}
+
+function showSaveModal() {
+  document.getElementById('saveName').value = '';
+  document.getElementById('saveModal').style.display = 'flex';
+}
+
+function closeSaveModal() {
+  document.getElementById('saveModal').style.display = 'none';
+}
+
+function doSave() {
+  let name = document.getElementById('saveName').value.trim();
+  if (!name) { toast('Enter a program name'); return; }
+  let lib = getLibrary();
+  let id = Date.now();
+  lib.push({
+    id: id,
+    name: name,
+    program_data: state.program,
+    registers: state.registers,
+    created_at: new Date().toISOString()
+  });
+  saveLibrary(lib);
+  toast('Program saved!');
+  closeSaveModal();
+}
+
+function showLoadModal() {
+  document.getElementById('loadModal').style.display = 'flex';
+  let programs = getLibrary();
+  if (programs.length === 0) {
+    document.getElementById('saveList').innerHTML = '<div style="text-align:center;padding:20px;color:#888">No saved programs</div>';
+  } else {
+    let html = '';
+    for (let p of programs) {
+      html += `<div class="save-item" onclick="loadProgram(${p.id})">
+        <span class="save-name">${escapeHtml(p.name)}</span>
+        <span class="save-date">${p.created_at ? p.created_at.substring(0,10) : ''}</span>
+        <button class="save-del" onclick="event.stopPropagation();exportProgram(${p.id})" title="Download">⬇</button>
+        <button class="save-del" onclick="event.stopPropagation();deleteProgram(${p.id})">✕</button>
+      </div>`;
     }
-    function loadProgram(event) {
-        let file = event.target.files[0];
-        if (!file) return;
-        let reader = new FileReader();
-        reader.onload = function() {
-            try {
-                let parsed = JSON.parse(reader.result);
-                if (Array.isArray(parsed) && parsed.length === 100) {
-                    programSpace = parsed; pc = 0; renderProgramList(); updateDisplay(currentInput);
-                }
-            } catch(e) { alert('Invalid program file format.'); }
-            event.target.value = '';
-        };
-        reader.readAsText(file);
+    document.getElementById('saveList').innerHTML = html;
+  }
+}
+
+function closeLoadModal() {
+  document.getElementById('loadModal').style.display = 'none';
+}
+
+function loadProgram(id) {
+  let lib = getLibrary();
+  let p = lib.find(x => x.id === id);
+  if (!p) { toast('Program not found'); return; }
+  state.program = p.program_data;
+  if (p.registers && Array.isArray(p.registers)) state.registers = p.registers;
+  state.pc = 0;
+  state.returnStack = [];
+  stopRunning();
+  renderProgramList();
+  updateDisplay(state.input);
+  closeLoadModal();
+  toast('Program loaded: ' + p.name);
+}
+
+function deleteProgram(id) {
+  if (!confirm('Delete this program?')) return;
+  let lib = getLibrary().filter(x => x.id !== id);
+  saveLibrary(lib);
+  showLoadModal();
+  toast('Program deleted');
+}
+
+function exportProgram(id) {
+  let lib = getLibrary();
+  let p = lib.find(x => x.id === id);
+  if (!p) { toast('Program not found'); return; }
+  let blob = new Blob([JSON.stringify(p, null, 2)], {type: 'application/json'});
+  let a = document.createElement('a');
+  a.download = p.name.replace(/[^a-zA-Z0-9_-]/g, '_') + '.json';
+  a.href = URL.createObjectURL(blob);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Exported ' + p.name);
+}
+
+function importProgram(event) {
+  let file = event.target.files[0];
+  if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function() {
+    try {
+      let data = JSON.parse(reader.result);
+      if (!data.name || !data.program_data || !Array.isArray(data.program_data)) {
+        toast('Invalid program file'); return;
+      }
+      let lib = getLibrary();
+      lib.push({
+        id: Date.now(),
+        name: data.name,
+        program_data: data.program_data,
+        registers: data.registers || [],
+        created_at: new Date().toISOString()
+      });
+      saveLibrary(lib);
+      showLoadModal();
+      toast('Imported: ' + data.name);
+    } catch(e) {
+      toast('Invalid file format');
     }
-    // Eddie's BlackJack program written in 1977, loaded into memory for testing and demonstration purposes.
-    //  Click “Load Demo”, Press GTO 86 R/S to run. 
-    //  You’re the Boss, Click R/S again to get your first card. 
-    //  Enter 8055 R/S to HIT or just R/S for dealer's hand and display the results. 
-    //  R/S for next hand. 
-    //  Their is a brief pause for the accumulating Dealer totals. 
-    //  BooBoo is a bust of either Boss or Dealer hand. 
-    //  BB.DD is final Boss.Dealer hand totals.
-    function loadDemoBlackJack() {
-        programSpace = Array(100).fill("Nop");
-        let demo = [
-            "xt","RCL","4","x=t","2","6","subr","4","0","int","SUM","2","RCL","2","subr","5","9","xt","RCL","7","x>=t","0","6","GTO","7","4","subr","4","0","int","SUM","1","RCL","1","subr","5","9","=","R/S","RST","pi","+","RCL","0","=","yx","8","-","int","=","STO","0","*","1","1","+","1","=","rtn","xt","RCL","6","x>=t","9","7","xt","pause","pause","RCL","5","R/S","GTO","8","6","xt","*",".","0","1","fix","2","+","RCL","1","=","R/S","0","STO","1","STO","2","fix","0","RCL","4","R/S","RST","xt","pause","rtn"
-        ];
-        for (let i = 0; i < demo.length; i++) {
-            programSpace[i] = demo[i];
-        }
-        registers[4] = 8055;
-        registers[5] = 800800;
-        registers[6] = 21;
-        registers[7] = 16;
-        pc = 0; currentInput = '0'; startNewInput = true;
-        renderProgramList(); updateDisplay(currentInput);
-    }
-    window.addEventListener('keydown', (e) => {
-        if (e.key >= '0' && e.key <= '9') press(e.key);
-        if (e.key === '.') press('.'); if (e.key === '+') press('+'); if (e.key === '-') press('-');
-        if (e.key === '*') press('*'); if (e.key === '/') press('/'); if (e.key === '(' || e.key === ')') press(e.key);
-        if (e.key === 'Enter' || e.key === '=') press('='); if (e.key === 'Escape') press('CLR');
-    });
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function escapeHtml(s) {
+  let d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ──────────────────────────────────────────────
+// Demo: BlackJack77
+// ──────────────────────────────────────────────
+function loadDemoBlackJack() {
+  stopRunning();
+  state.program = Array(100).fill('Nop');
+  let demo = [
+    'xt','RCL','4','x=t','2','6','subr','4','0','int','SUM','2','RCL','2',
+    'subr','5','9','xt','RCL','7','x>=t','0','6','GTO','7','4','subr','4',
+    '0','int','SUM','1','RCL','1','subr','5','9','=','R/S','RST','pi','+',
+    'RCL','0','=','yx','8','-','int','=','STO','0','*','1','1','+','1','=',
+    'rtn','xt','RCL','6','x>=t','9','7','xt','pause','pause','RCL','5','R/S',
+    'GTO','8','6','xt','*','.','0','1','fix','2','+','RCL','1','=','R/S','0',
+    'STO','1','STO','2','fix','0','RCL','4','R/S','RST','xt','pause','rtn'
+  ];
+  for (let i = 0; i < demo.length; i++) state.program[i] = demo[i];
+  state.registers[4] = 8055;
+  state.registers[5] = 800800;
+  state.registers[6] = 21;
+  state.registers[7] = 16;
+  state.pc = 0;
+  state.input = '0';
+  state.newInput = true;
+  renderProgramList();
+  updateDisplay(state.input);
+  toast('BlackJack77 loaded! GTO 86 R/S to run.');
+}
+
+// ──────────────────────────────────────────────
+// Screen Navigation
+// ──────────────────────────────────────────────
+// Scroll to program section
+function scrollToProg() {
+  document.querySelector('.prog-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Close modals on overlay click
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+document.getElementById('saveModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSaveModal();
+});
+document.getElementById('loadModal').addEventListener('click', function(e) {
+  if (e.target === this) closeLoadModal();
+});
+
+// Toast
+function toast(msg) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ──────────────────────────────────────────────
+// Keyboard Support
+// ──────────────────────────────────────────────
+window.addEventListener('keydown', (e) => {
+  // Don't intercept when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.key >= '0' && e.key <= '9') press(e.key);
+  if (e.key === '.') press('.');
+  if (e.key === '+') press('+');
+  if (e.key === '-') press('-');
+  if (e.key === '*') press('*');
+  if (e.key === '/') press('/');
+  if (e.key === 'Enter' || e.key === '=') press('=');
+  if (e.key === 'Escape') press('CLR');
+  if (e.key === 'Backspace') press('CE');
+});
+
+// ──────────────────────────────────────────────
+// Build Keyboard
+// ──────────────────────────────────────────────
+// Key format: [subLabel, displayText, pressKey, colorClass]
+// pressKey defaults to displayText if omitted
+function K(sub, disp, press, cls, subCls) { return [sub, disp, press || disp, cls, subCls || '']; }
+
+function buildKeyboard() {
+  // Top grid (5 columns, 4 rows)
+  let topKeys = [
+    K('','2nd',null,'o'),  K('','INV',null,'g'),  K('log','lnx',null,'g'), K('10ᵡ','eᵡ','ex','g'), K('','CLR',null,'o'),
+    K('f(n)','LRN',null,'g'),K('dsz','GTO',null,'g'),K('|x|','sin',null,'g'),K('int','cos',null,'g'),     K('1/x','tan',null,'g'),
+    K('bst','SST',null,'g'),K('x=t','x:t','xt','g'),K('CMs','STO',null,'g'),K('exc','RCL',null,'g'),       K('prod','SUM',null,'g'),
+    K('nop','R/S',null,'g'),K('x≥t','RST',null,'g'),K('√x','x²','x2','g'),K('fix','EE',null,'g'),K('x√y','yᵡ','yx','g')
+  ];
+  let html = '';
+  for (let k of topKeys) {
+    let cls = k[3] === 'o' ? 'orange' : (k[3] === 'w' ? 'white' : 'gray');
+    html += `<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${cls}" data-key="${k[2]}">${k[1]}</button></div>`;
+  }
+  document.getElementById('keyGridTop').innerHTML = html;
+
+  // Bottom grid (4 columns, 5 rows)
+  let bottomKeys = [
+    K('cp','CE',null,'o'),     K('subr','(',null,'g'),     K('rtn',')',null,'g'),      K('pause','/',null,'o'),
+    K('','7',null,'w'),        K('','8',null,'w'),         K('','9',null,'w'),         K('π','X','*','o'),
+    K('Σ+','4',null,'w','blue'),K('Σ-','5',null,'w','blue'),K('','6',null,'w'),        K('rad','-',null,'o'),
+    K('mean','1',null,'w','blue'),K('p→r','2',null,'w','blue'),K('r→p','3',null,'w','blue'),K('','+',null,'o'),
+    K('s.dev','0',null,'w','blue'),K('prt','.',null,'w','blue'),K('pap','+/-',null,'w','blue'),K('list','=',null,'o')
+  ];
+  html = '';
+  for (let k of bottomKeys) {
+    let cls = k[3] === 'o' ? 'orange' : (k[3] === 'w' ? 'white' : 'gray');
+    html += `<div class="key-wrap"><div class="key-sub ${k[4]}">${k[0]}</div><button class="key-btn ${cls}" data-key="${k[2]}">${k[1]}</button></div>`;
+  }
+  document.getElementById('keyGridBottom').innerHTML = html;
+}
+
+// Delegate key clicks
+document.getElementById('keyGridTop').addEventListener('click', (e) => {
+  let btn = e.target.closest('button');
+  if (btn && btn.dataset.key) press(btn.dataset.key);
+});
+document.getElementById('keyGridBottom').addEventListener('click', (e) => {
+  let btn = e.target.closest('button');
+  if (btn && btn.dataset.key) press(btn.dataset.key);
+});
+
+// ──────────────────────────────────────────────
+// Init
+// ──────────────────────────────────────────────
+buildKeyboard();
+renderProgramList();
+updateDisplay('0');
+updateIndicators();
+// Load BlackJack demo by default
+loadDemoBlackJack();
 </script>
-</body>
-</html>
+
+
+</body></html>
