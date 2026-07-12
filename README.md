@@ -10,7 +10,7 @@ It can be loaded into memory for testing and demonstration purposes.
 
 ## === INSTRUCTIONS ===
 
-1. Open "https://edwize.github.io/TI-56-simulator/" in a browser (non-mobile).
+1. Open "https://edwize.github.io/TI-56-simulator/" in a browser.
 2. Click "Load Demo". (preloaded on startup)
 3. Key "GTO 86 R/S" to run.
 4. You're the BOSS. Click R/S again to get your first card.
@@ -22,3 +22,6 @@ It can be loaded into memory for testing and demonstration purposes.
 * There is a brief pause for the accumulating Dealer totals.
 * "BooBoo" is a bust of either Boss or Dealer hand.
 * "BB.DD" is final Boss.Dealer hand totals.
+* "RCL 4" will type "BOSS" with 2 keystrokes.
+* Scroll below calculator for Program Memory window.
+* Prog Mem window has Turbo and Debug tools.
