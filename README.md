@@ -11,8 +11,8 @@ It can be loaded into memory for testing and demonstration purposes.
 ## === INSTRUCTIONS ===
 
 1. Open "https://edwize.github.io/TI-56-simulator/" in a browser.
-2. Click "Load Demo". (preloaded on startup)
-3. Key "GTO 86 R/S" to run.
+2. "BlackJack77" is preloaded on startup. or scroll to bottom of Program Memroy. 
+3. Key "GTO 86 R/S" to Run/Stop program in memory. 
 4. You're the BOSS. Click R/S again to get your first card.
 5. Key "8055 R/S" to HIT, or just "R/S" for the dealer's turn and results displayed.
 6. "R/S" for next hand.
@@ -21,7 +21,7 @@ It can be loaded into memory for testing and demonstration purposes.
 
 * There is a brief pause for the accumulating Dealer totals.
 * "BooBoo" is a bust of either Boss or Dealer hand.
-* "BB.DD" is final Boss.Dealer hand totals.
+* "BB.DD" is final Boss.Dealer hand totals if not over 21.
 * "RCL 4" will type "BOSS" with 2 keystrokes.
 * Scroll below calculator for Program Memory window.
 * Prog Mem window has Turbo and Debug tools.
